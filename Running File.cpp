@@ -314,7 +314,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[2]) * 0.3);
+				Sleep((300 - datalineDistance[2]) * 0.5);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
@@ -323,7 +323,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[0]) * 0.3);
+				Sleep((300 - datalineDistance[0]) * 0.5);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
