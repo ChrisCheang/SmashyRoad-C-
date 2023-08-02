@@ -22,6 +22,13 @@ using namespace cv;
 
 // test git.
 
+/* opencv setup :
+
+	https://subwaymatch.medium.com/opencv-410-with-vs-2019-3d0bc0c81d96
+	https://www.tutorialspoint.com/how-to-install-opencv-for-cplusplus-in-windows
+
+*/
+
 //Comment off so some stuff isn't defined twice
 
 // boxCentre of phone screen (172, 130),   boxSize = 42
@@ -243,8 +250,8 @@ int main() {
 				//cout << datalineDistance[i] << " ";
 			}
 
-			
-			
+
+
 
 
 			Mat img;
@@ -280,7 +287,7 @@ int main() {
 			INPUT key = {};  // press down key for reverse
 			key.type = INPUT_KEYBOARD;
 			key.ki.wVk = 0x28;
-			
+
 
 
 			if (datalineDistance[1] < 200) {    // turn left/right if a lane is in front
@@ -351,14 +358,14 @@ int main() {
 				cout << "Reversing..." << endl;
 			}
 
-	
+
 
 
 
 
 		}
 
-		
+
 
 	}
 
