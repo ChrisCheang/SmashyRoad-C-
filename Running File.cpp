@@ -20,7 +20,7 @@
 using namespace std;
 using namespace cv;
 
-// test git.
+
 
 /* opencv setup :
 
@@ -29,7 +29,9 @@ using namespace cv;
 
 */
 
-//Comment off so some stuff isn't defined twice
+
+
+//       SETUPS (booleans, vectors)        //
 
 // boxCentre of phone screen (172, 130),   boxSize = 42
 Point boxCentre = Point(172, 130);
@@ -42,6 +44,15 @@ int xa = boxCentre.x - boxSize / 2;
 int xb = boxCentre.x + boxSize / 2;
 int ya = boxCentre.y - boxSize / 2;
 int yb = boxCentre.y + boxSize / 2;
+
+bool setup = false;  // gives a few seconds to setup the screen after initiation
+bool reversed = false; // prevents reverse lock cycle; initiates as false
+
+vector<double> laneAngles{CV_PI * 0.25, CV_PI * 0.75, -CV_PI * 0.25, -CV_PI * 0.75};
+
+
+//       END OF SETUPS     //
+
 
 Mat getMat(HWND hWND) {
 
@@ -170,12 +181,12 @@ int main() {
 	HWND hWND = FindWindow(NULL, window_title);
 
 
-	bool setup = false;  // gives a few seconds to setup the screen after initiation
-	bool reversed = false; // prevents reverse lock cycle; initiates as false
+
 
 	while (true) {
 
-		Mat imgRaw = getMat(hWND);
+		// Line detection of small map for orientation //
+		Mat imgRaw = getMat(hWND);    
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
 		Mat imgGrayBox, imgBlurBox, edges;
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified)
@@ -209,44 +220,49 @@ int main() {
 			double angle = atan2(dirPoint.y, dirPoint.x);
 			// cout << "Angle = " << angle << " radians" << endl;
 
+
+			// Line detection of main screen (scaled) for lanes and edges (sorted from main list "boundaries")
 			Mat imgRawResize, imgGray, imgBlur, edgesLanes;
 			resize(imgRaw, imgRawResize, Size(screenSize.x / 4, screenSize.y / 4), INTER_LINEAR);
 			cvtColor(imgRawResize, imgGray, cv::COLOR_BGR2GRAY);
 			GaussianBlur(imgGray, imgBlur, Size(3, 3), 0);
 			Canny(imgBlur, edgesLanes, 100, 200);
-			vector<Vec4i> lanes;
-			HoughLinesP(edgesLanes, lanes, 1, CV_PI / 180, 80 / 4, 300 / 4, 8 / 4);   // divide used to make it easier to change detection resolution
+			vector<Vec4i> boundaries, lanes, edges;
+			HoughLinesP(edgesLanes, boundaries, 1, CV_PI / 180, 80 / 4, 300 / 4, 8 / 4);   // divide used to make it easier to change detection resolution
 
-			for (size_t j = 0; j < lanes.size(); j++) {
+			for (size_t j = 0; j < boundaries.size(); j++) {
 				line(imgRaw, Point(lanes[j][0] * 4, lanes[j][1] * 4), Point(lanes[j][2] * 4, lanes[j][3] * 4), Scalar(0, 255, 0), 2);
 			}
 
 			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
 			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistance;
-			//vector<double> datalineDistances;
-			vector<Point> endPoints;
-			double minDist;
-			Point intersect;
+			vector<double> datalineDistanceLanes, datalineDistanceEdges;
+			vector<Point> endPoints;     // end points for the setup datalines
+			double minDistLanes, minDistEdges, angleDelta;
+			Point intersect, point1, point2;
+			
 
 			for (int i = 0; i < 3; i++) {
-				minDist = 1000;   // also doubles as the length of the setup datalines
-				//datalineDistances.clear();
-				//datalineDistances.push_back(2000.1);  // just to test if an empty or just initiated list is the problem
-				endPoints.push_back(Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))));
+				minDistLanes, minDistEdges = 1000, 1000;   // also doubles as the length of the setup datalines
+				endPoints.push_back(Point(screenSize.x / 2 + int(1000 * cos(angle + anglesVar[i])), screenSize.y / 2 - int(1000 * sin(angle + anglesVar[i]))));
 				datalineSetup.push_back(Vec4i(screenSize.x / 2, screenSize.y / 2, endPoints[i].x, endPoints[i].y));
 
-				for (int n = 0; n < lanes.size(); n++) {
-					if (doIntersect(Point(screenSize.x / 2, screenSize.y / 2), endPoints[i], Point(lanes[n][0] * 4, lanes[n][1] * 4), Point(lanes[n][2] * 4, lanes[n][3] * 4))) {
-						intersect = intersection(datalineSetup[i], Vec4i(lanes[n][0] * 4, lanes[n][1] * 4, lanes[n][2] * 4, lanes[n][3] * 4)); // HLP of map done on rescaled, so need to scale up
-						if (pointDistanceToCentre(intersect) < minDist) {
-							minDist = pointDistanceToCentre(intersect);
-							//datalineDistances.push_back(pointDistanceToCentre(intersect));
+				for (int n = 0; n < boundaries.size(); n++) {
+					point1 = Point(boundaries[n][0] * 4, boundaries[n][1] * 4);
+					point2 = Point(boundaries[n][2] * 4, boundaries[n][3] * 4);
+					if (doIntersect(Point(screenSize.x / 2, screenSize.y / 2), endPoints[i], point1, point2)) {
+						intersect = intersection(datalineSetup[i], Vec4i(boundaries[n][0] * 4, boundaries[n][1] * 4, boundaries[n][2] * 4, boundaries[n][3] * 4));
+						angleDelta = abs(angle - atan2(point2.y - point1.y, point2.x - point1.x));
+						if (angleDelta > CV_PI * 0.2 || angleDelta < CV_PI * 0.8 && pointDistanceToCentre(intersect) < minDistEdges) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
+							minDistEdges = pointDistanceToCentre(intersect);
+						}
+						else if (angleDelta < CV_PI * 0.2 || angleDelta > CV_PI * 0.8 && pointDistanceToCentre(intersect) < minDistLanes) {
+							minDistLanes = pointDistanceToCentre(intersect);
 						}
 					}
 				}
-				//minDist = min_element(datalineDistances.begin(), datalineDistances.end());
-				datalineDistance.push_back(minDist);
+				datalineDistanceLanes.push_back(minDistLanes);
+				datalineDistanceEdges.push_back(minDistEdges);
 				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))), Scalar(0, 255, 255), 3);
 				//cout << datalineDistance[i] << " ";
 			}
