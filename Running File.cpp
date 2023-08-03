@@ -171,6 +171,7 @@ int main() {
 
 
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
+	bool reversed = false; // prevents reverse lock cycle; initiates as false
 
 	while (true) {
 
@@ -292,29 +293,30 @@ int main() {
 
 			if (datalineDistance[1] < 200) {    // turn left/right if a lane is in front
 				if (datalineDistance[2] < datalineDistance[0]) {
+					cout << "Right (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(800);
+					Sleep(700);
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
-					cout << "Left" << endl;
+					SendInput(1, &ip, sizeof(INPUT));		
 				}
 				else {
+					cout << "Left (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 17; // turn left for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(800);
+					Sleep(700);
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					SendInput(1, &ip, sizeof(INPUT));
-					cout << "Left" << endl;
+					Sleep(1000);
 				}
 			}
 			else if (datalineDistance[2] < 300) {     // lanes on the right
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[2]) * 0.5);
+				Sleep((300 - datalineDistance[2]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
@@ -323,7 +325,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[0]) * 0.5);
+				Sleep((300 - datalineDistance[0]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
@@ -347,18 +349,39 @@ int main() {
 
 			// cout << countNonZero(dif) << endl;
 
+			
+
+
 			if (countNonZero(dif) < 5000) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
-				SendInput(1, &key, sizeof(key));
-				for (double i = 20; i > 0; i--) {
-					cout << "Reversing, T - " << i / 10 << " seconds" << endl;
-					Sleep(100);
+				if (not reversed) {
+					cout << "Start reversing..." << endl;
+					SendInput(1, &key, sizeof(key));
+					Sleep(2000);
+					key.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &key, sizeof(key));
+					reversed = true;
+					cout << "Finished reversing" << endl;
 				}
-				key.ki.dwFlags = KEYEVENTF_KEYUP;
-				SendInput(1, &key, sizeof(key));
-				cout << "Reversing..." << endl;
+				else if (reversed) {
+					cout << "Right (after reversing) - 1 s" << endl;
+					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
+					Sleep(1500);
+					key.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &key, sizeof(key));
+					ip.mi.dx = 3456 / 2 * 20; // turn right for more
+					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+					SendInput(1, &ip, sizeof(INPUT));
+					Sleep(1000);
+					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					SendInput(1, &ip, sizeof(INPUT));
+					reversed = false;
+					cout << "Continue!" << endl;
+				}
 			}
+			else { reversed = false; }
 
 
+			cout << endl;
 
 
 
