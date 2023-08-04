@@ -259,12 +259,17 @@ int main() {
 						else if (angleDelta < CV_PI * 0.2 || angleDelta > CV_PI * 0.8 && pointDistanceToCentre(intersect) < minDistLanes) {
 							minDistLanes = pointDistanceToCentre(intersect);
 						}
+						else {       // else loop just there to test empty lists
+							minDistEdges = pointDistanceToCentre(intersect);
+							minDistLanes = pointDistanceToCentre(intersect);
+
+						}
 					}
 				}
 				datalineDistanceLanes.push_back(minDistLanes);
 				datalineDistanceEdges.push_back(minDistEdges);
-				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))), Scalar(0, 255, 255), 3);
-				//cout << datalineDistance[i] << " ";
+				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
+				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistEdges * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistEdges * sin(angle + anglesVar[i]))), Scalar(0, 0, 255), 3);
 			}
 
 
@@ -307,8 +312,8 @@ int main() {
 
 
 
-			if (datalineDistance[1] < 200) {    // turn left/right if a lane is in front
-				if (datalineDistance[2] < datalineDistance[0]) {
+			if (datalineDistanceEdges[1] < 200) {    // turn left/right if an edge is in front
+				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
@@ -328,20 +333,20 @@ int main() {
 					Sleep(1000);
 				}
 			}
-			else if (datalineDistance[2] < 300) {     // lanes on the right
+			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[2]) * 0.3);
+				Sleep((300 - datalineDistanceLanes[2]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
 			}
-			else if (datalineDistance[0] < 300) {    // lanes on the left
+			else if (datalineDistanceLanes[0] < 300) {    // lanes on the left
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[0]) * 0.3);
+				Sleep((300 - datalineDistanceLanes[0]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
