@@ -20,7 +20,7 @@
 using namespace std;
 using namespace cv;
 
-
+// test git.
 
 /* opencv setup :
 
@@ -29,9 +29,7 @@ using namespace cv;
 
 */
 
-
-
-//       SETUPS (booleans, vectors)        //
+//Comment off so some stuff isn't defined twice
 
 // boxCentre of phone screen (172, 130),   boxSize = 42
 Point boxCentre = Point(172, 130);
@@ -44,15 +42,6 @@ int xa = boxCentre.x - boxSize / 2;
 int xb = boxCentre.x + boxSize / 2;
 int ya = boxCentre.y - boxSize / 2;
 int yb = boxCentre.y + boxSize / 2;
-
-bool setup = false;  // gives a few seconds to setup the screen after initiation
-bool reversed = false; // prevents reverse lock cycle; initiates as false
-
-vector<double> laneAngles{CV_PI * 0.25, CV_PI * 0.75, -CV_PI * 0.25, -CV_PI * 0.75};
-
-
-//       END OF SETUPS     //
-
 
 Mat getMat(HWND hWND) {
 
@@ -181,12 +170,12 @@ int main() {
 	HWND hWND = FindWindow(NULL, window_title);
 
 
-
+	bool setup = false;  // gives a few seconds to setup the screen after initiation
+	bool reversed = false; // prevents reverse lock cycle; initiates as false
 
 	while (true) {
 
-		// Line detection of small map for orientation //
-		Mat imgRaw = getMat(hWND);    
+		Mat imgRaw = getMat(hWND);
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
 		Mat imgGrayBox, imgBlurBox, edges;
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified)
@@ -220,31 +209,38 @@ int main() {
 			double angle = atan2(dirPoint.y, dirPoint.x);
 			// cout << "Angle = " << angle << " radians" << endl;
 
-
-			// Line detection of main screen (scaled) for lanes and edges (sorted from main list "boundaries")
 			Mat imgRawResize, imgGray, imgBlur, edgesLanes;
 			resize(imgRaw, imgRawResize, Size(screenSize.x / 4, screenSize.y / 4), INTER_LINEAR);
 			cvtColor(imgRawResize, imgGray, cv::COLOR_BGR2GRAY);
 			GaussianBlur(imgGray, imgBlur, Size(3, 3), 0);
 			Canny(imgBlur, edgesLanes, 100, 200);
-			vector<Vec4i> boundaries, lanes, edges;
+			vector<Vec4i> boundaries;
 			HoughLinesP(edgesLanes, boundaries, 1, CV_PI / 180, 80 / 4, 300 / 4, 8 / 4);   // divide used to make it easier to change detection resolution
 
 			for (size_t j = 0; j < boundaries.size(); j++) {
-				line(imgRaw, Point(lanes[j][0] * 4, lanes[j][1] * 4), Point(lanes[j][2] * 4, lanes[j][3] * 4), Scalar(0, 255, 0), 2);
+				line(imgRaw, Point(boundaries[j][0] * 4, boundaries[j][1] * 4), Point(boundaries[j][2] * 4, boundaries[j][3] * 4), Scalar(0, 255, 0), 2);
 			}
+
+			/*
+			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
+			vector<Vec4i> datalineSetup;
+			vector<double> datalineDistance;
+			vector<Point> endPoints;
+			double minDist, angleDelta;
+			Point intersect, point1, point2;
+			*/
 
 			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
 			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistanceLanes, datalineDistanceEdges;
+			vector<double> datalineDistanceLanes, datalineDistanceEdges, datalineDistance;
 			vector<Point> endPoints;     // end points for the setup datalines
-			double minDistLanes, minDistEdges, angleDelta;
+			double minDistLanes, minDistEdges, minDist, angleDelta;
 			Point intersect, point1, point2;
-			
 
 			for (int i = 0; i < 3; i++) {
-				minDistLanes, minDistEdges = 1000, 1000;   // also doubles as the length of the setup datalines
-				endPoints.push_back(Point(screenSize.x / 2 + int(1000 * cos(angle + anglesVar[i])), screenSize.y / 2 - int(1000 * sin(angle + anglesVar[i]))));
+				minDist = 1000;   // also doubles as the length of the setup datalines
+				minDistLanes = 1000, minDistEdges = 1000;
+				endPoints.push_back(Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))));
 				datalineSetup.push_back(Vec4i(screenSize.x / 2, screenSize.y / 2, endPoints[i].x, endPoints[i].y));
 
 				for (int n = 0; n < boundaries.size(); n++) {
@@ -253,25 +249,35 @@ int main() {
 					if (doIntersect(Point(screenSize.x / 2, screenSize.y / 2), endPoints[i], point1, point2)) {
 						intersect = intersection(datalineSetup[i], Vec4i(boundaries[n][0] * 4, boundaries[n][1] * 4, boundaries[n][2] * 4, boundaries[n][3] * 4));
 						angleDelta = abs(angle - atan2(point2.y - point1.y, point2.x - point1.x));
-						if (angleDelta > CV_PI * 0.2 || angleDelta < CV_PI * 0.8 && pointDistanceToCentre(intersect) < minDistEdges) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
-							minDistEdges = pointDistanceToCentre(intersect);
-						}
-						else if (angleDelta < CV_PI * 0.2 || angleDelta > CV_PI * 0.8 && pointDistanceToCentre(intersect) < minDistLanes) {
-							minDistLanes = pointDistanceToCentre(intersect);
-						}
-						else {       // else loop just there to test empty lists
-							minDistEdges = pointDistanceToCentre(intersect);
-							minDistLanes = pointDistanceToCentre(intersect);
+						
 
-						}
+						
+						if (pointDistanceToCentre(intersect) < minDist) {
+							minDist = pointDistanceToCentre(intersect);
+
+
+							// new stuff to test
+							if (angleDelta < 1.0 || angleDelta > 3.0) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
+								minDistEdges = pointDistanceToCentre(intersect);     // Red
+							}
+							else if (1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI ) {
+								minDistLanes = pointDistanceToCentre(intersect);   // Blue
+							}
+						}	
 					}
 				}
+				datalineDistance.push_back(minDist);
+				//line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))), Scalar(0, 255, 255), 3);
+				
 				datalineDistanceLanes.push_back(minDistLanes);
 				datalineDistanceEdges.push_back(minDistEdges);
-				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
+				line(imgRaw, Point(screenSize.x / 2 + 10, screenSize.y / 2 + 10), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
 				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistEdges * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistEdges * sin(angle + anglesVar[i]))), Scalar(0, 0, 255), 3);
+			
+			
 			}
 
+			
 
 
 
@@ -312,15 +318,15 @@ int main() {
 
 
 
-			if (datalineDistanceEdges[1] < 200) {    // turn left/right if an edge is in front
-				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
+			if (datalineDistanceEdges[1] < 500) {    // turn left/right if an edge is in front
+				if (datalineDistance[2] < datalineDistance[0]) {
 					cout << "Right (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(700);
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));		
+					SendInput(1, &ip, sizeof(INPUT));
 				}
 				else {
 					cout << "Left (wall) - 0.7 s" << endl;
@@ -337,7 +343,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistanceLanes[2]) * 0.3);
+				Sleep((300 - datalineDistance[2]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
@@ -346,7 +352,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistanceLanes[0]) * 0.3);
+				Sleep((300 - datalineDistance[0]) * 0.3);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
@@ -370,7 +376,7 @@ int main() {
 
 			// cout << countNonZero(dif) << endl;
 
-			
+
 
 
 			if (countNonZero(dif) < 5000) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
@@ -384,6 +390,14 @@ int main() {
 					cout << "Finished reversing" << endl;
 				}
 				else if (reversed) {
+					cout << "Start reversing..." << endl;
+					SendInput(1, &key, sizeof(key));
+					Sleep(2000);
+					key.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &key, sizeof(key));
+					reversed = true;
+					cout << "Finished reversing" << endl;
+					/*
 					cout << "Right (after reversing) - 1 s" << endl;
 					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
 					Sleep(1500);
@@ -397,6 +411,7 @@ int main() {
 					SendInput(1, &ip, sizeof(INPUT));
 					reversed = false;
 					cout << "Continue!" << endl;
+					*/
 				}
 			}
 			else { reversed = false; }
