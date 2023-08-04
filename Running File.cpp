@@ -232,15 +232,14 @@ int main() {
 
 			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
 			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistanceLanes, datalineDistanceEdges, datalineDistance;
+			vector<double> datalineDistanceLanes, datalineDistanceEdges;
 			vector<Point> endPoints;     // end points for the setup datalines
-			double minDistLanes, minDistEdges, minDist, angleDelta;
+			double minDistLanes, minDistEdges, angleDelta;
 			Point intersect, point1, point2;
 
 			for (int i = 0; i < 3; i++) {
-				minDist = 1000;   // also doubles as the length of the setup datalines
-				minDistLanes = 1000, minDistEdges = 1000;
-				endPoints.push_back(Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))));
+				minDistLanes = 1000, minDistEdges = 1000;    // also doubles as the length of the setup datalines
+				endPoints.push_back(Point(screenSize.x / 2 + int(1000 * cos(angle + anglesVar[i])), screenSize.y / 2 - int(1000 * sin(angle + anglesVar[i]))));
 				datalineSetup.push_back(Vec4i(screenSize.x / 2, screenSize.y / 2, endPoints[i].x, endPoints[i].y));
 
 				for (int n = 0; n < boundaries.size(); n++) {
@@ -250,25 +249,14 @@ int main() {
 						intersect = intersection(datalineSetup[i], Vec4i(boundaries[n][0] * 4, boundaries[n][1] * 4, boundaries[n][2] * 4, boundaries[n][3] * 4));
 						angleDelta = abs(angle - atan2(point2.y - point1.y, point2.x - point1.x));
 						
-
-						
-						if (pointDistanceToCentre(intersect) < minDist) {
-							minDist = pointDistanceToCentre(intersect);
-
-
-							// new stuff to test
-							if (angleDelta < 1.0 || angleDelta > 3.0) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
-								minDistEdges = pointDistanceToCentre(intersect);     // Red
-							}
-							else if (1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI ) {
-								minDistLanes = pointDistanceToCentre(intersect);   // Blue
-							}
-						}	
+						if (pointDistanceToCentre(intersect) < minDistEdges && angleDelta < 1.0 || angleDelta > 3.0) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
+							minDistEdges = pointDistanceToCentre(intersect);     // Red
+						}
+						else if (pointDistanceToCentre(intersect) < minDistLanes && 1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI ) {
+							minDistLanes = pointDistanceToCentre(intersect);   // Blue
+						}
 					}
 				}
-				datalineDistance.push_back(minDist);
-				//line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDist * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDist * sin(angle + anglesVar[i]))), Scalar(0, 255, 255), 3);
-				
 				datalineDistanceLanes.push_back(minDistLanes);
 				datalineDistanceEdges.push_back(minDistEdges);
 				line(imgRaw, Point(screenSize.x / 2 + 10, screenSize.y / 2 + 10), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
@@ -319,7 +307,7 @@ int main() {
 
 
 			if (datalineDistanceEdges[1] < 500) {    // turn left/right if an edge is in front
-				if (datalineDistance[2] < datalineDistance[0]) {
+				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
@@ -343,7 +331,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[2]) * 0.3);
+				Sleep((300 - datalineDistanceLanes[2]) * 0.5);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
@@ -352,7 +340,7 @@ int main() {
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistance[0]) * 0.3);
+				Sleep((300 - datalineDistanceLanes[0]) * 0.5);
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
