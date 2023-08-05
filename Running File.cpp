@@ -36,12 +36,19 @@ Point boxCentre = Point(172, 130);
 int boxSize = 42;
 // Phone size = (2400, 1080)
 // Weird error (26-7-2023): screen size changed somehow to (1940, 873), then boxCentre = (139, 105), boxSize = 34
+
+// Data Setups //
+
 Point screenSize = Point(2400, 1080);
 
 int xa = boxCentre.x - boxSize / 2;
 int xb = boxCentre.x + boxSize / 2;
 int ya = boxCentre.y - boxSize / 2;
 int yb = boxCentre.y + boxSize / 2;
+
+vector<double> anglesVar{ -CV_PI * 0.3, 0, CV_PI * 0.3 }, laneAngles{ -CV_PI * 0.75, -CV_PI * 0.25, CV_PI * 0.25, CV_PI * 0.75 };
+
+// End of Setups //
 
 Mat getMat(HWND hWND) {
 
@@ -221,20 +228,12 @@ int main() {
 				line(imgRaw, Point(boundaries[j][0] * 4, boundaries[j][1] * 4), Point(boundaries[j][2] * 4, boundaries[j][3] * 4), Scalar(0, 255, 0), 2);
 			}
 
-			/*
-			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
-			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistance;
-			vector<Point> endPoints;
-			double minDist, angleDelta;
-			Point intersect, point1, point2;
-			*/
 
-			vector<double> anglesVar{-CV_PI * 0.3, 0, CV_PI * 0.3};
+
 			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistanceLanes, datalineDistanceEdges;
+			vector<double> datalineDistanceLanes, datalineDistanceEdges, angleDeltaToLane;
 			vector<Point> endPoints;     // end points for the setup datalines
-			double minDistLanes, minDistEdges, angleDelta;
+			double minDistLanes, minDistEdges, angleDelta, angleDeltaMin;
 			Point intersect, point1, point2;
 
 			for (int i = 0; i < 3; i++) {
@@ -265,8 +264,11 @@ int main() {
 			
 			}
 
-			
-
+			for (int i = 0; i < 4; i++) {
+				angleDeltaToLane.push_back(angle - angleDeltaToLane[i]);
+				angleDeltaMin = CV_PI * 0.25;
+				if (abs(angle - angleDeltaToLane[i]) < angleDeltaMin) { angleDeltaMin = angle - angleDeltaToLane[i]; }
+			}
 
 
 
@@ -306,13 +308,15 @@ int main() {
 
 
 
-			if (datalineDistanceEdges[1] < 500) {    // turn left/right if an edge is in front
+			if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall) - 0.7 s" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(700);
+					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					//SendInput(1, &ip, sizeof(INPUT));
 				}
 				else {
 					cout << "Left (wall) - 0.7 s" << endl;
@@ -320,6 +324,8 @@ int main() {
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(700);
+					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					//SendInput(1, &ip, sizeof(INPUT));
 				}
 			}
 			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right
@@ -373,13 +379,17 @@ int main() {
 					cout << "Finished reversing" << endl;
 				}
 				else if (reversed) {
-					cout << "Start reversing..." << endl;
-					SendInput(1, &key, sizeof(key));
-					Sleep(2000);
+					cout << "Right (after reversing) - 1 s" << endl;
+					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
+					Sleep(1500);
 					key.ki.dwFlags = KEYEVENTF_KEYUP;
 					SendInput(1, &key, sizeof(key));
-					reversed = true;
-					cout << "Finished reversing" << endl;
+					ip.mi.dx = 3456 / 2 * 20; // turn right for more
+					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+					SendInput(1, &ip, sizeof(INPUT));
+					Sleep(1000);
+					reversed = false;
+					cout << "Continue!" << endl;
 					/*
 					cout << "Right (after reversing) - 1 s" << endl;
 					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
