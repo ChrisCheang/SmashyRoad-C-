@@ -313,8 +313,6 @@ int main() {
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(700);
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
 				}
 				else {
 					cout << "Left (wall) - 0.7 s" << endl;
@@ -322,9 +320,6 @@ int main() {
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(700);
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(1000);
 				}
 			}
 			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right
