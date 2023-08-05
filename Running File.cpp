@@ -46,7 +46,7 @@ int xb = boxCentre.x + boxSize / 2;
 int ya = boxCentre.y - boxSize / 2;
 int yb = boxCentre.y + boxSize / 2;
 
-vector<double> anglesVar{ -CV_PI * 0.3, 0, CV_PI * 0.3 }, laneAngles{ -CV_PI * 0.75, -CV_PI * 0.25, CV_PI * 0.25, CV_PI * 0.75 };
+vector<double> anglesVar{ -CV_PI * 0.2, 0, CV_PI * 0.2 }, laneAngles{ -CV_PI * 0.75, -CV_PI * 0.25, CV_PI * 0.25, CV_PI * 0.75 };
 
 // End of Setups //
 
@@ -248,11 +248,11 @@ int main() {
 					if (doIntersect(Point(screenSize.x / 2, screenSize.y / 2), endPoints[i], point1, point2)) {
 						intersect = intersection(datalineSetup[i], Vec4i(boundaries[n][0] * 4, boundaries[n][1] * 4, boundaries[n][2] * 4, boundaries[n][3] * 4));
 						angleDelta = abs(angle - atan2(point2.y - point1.y, point2.x - point1.x));
-						
+
 						if (pointDistanceToCentre(intersect) < minDistEdges && angleDelta < 1.0 || angleDelta > 3.0) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
 							minDistEdges = pointDistanceToCentre(intersect);     // Red
 						}
-						else if (pointDistanceToCentre(intersect) < minDistLanes && 1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI ) {
+						else if (pointDistanceToCentre(intersect) < minDistLanes && 1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI) {
 							minDistLanes = pointDistanceToCentre(intersect);   // Blue
 						}
 					}
@@ -261,8 +261,8 @@ int main() {
 				datalineDistanceEdges.push_back(minDistEdges);
 				line(imgRaw, Point(screenSize.x / 2 + 10, screenSize.y / 2 + 10), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
 				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistEdges * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistEdges * sin(angle + anglesVar[i]))), Scalar(0, 0, 255), 3);
-			
-			
+
+
 			}
 
 
@@ -365,7 +365,7 @@ int main() {
 
 			// cout << countNonZero(dif) << endl;
 
-			
+
 
 
 			if (countNonZero(dif) < 5000) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
