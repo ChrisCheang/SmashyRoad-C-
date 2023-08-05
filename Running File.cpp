@@ -194,6 +194,7 @@ int main() {
 		if (lines.size() == 0) {
 			for (int i = 7; i > 0; i--) {
 				cout << "Game Restart, T - " << i << " seconds" << endl;
+				bool reversed = false;
 				Sleep(1000);
 			}
 		}
@@ -231,9 +232,9 @@ int main() {
 
 
 			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistanceLanes, datalineDistanceEdges, angleDeltaToLane;
+			vector<double> datalineDistanceLanes, datalineDistanceEdges;
 			vector<Point> endPoints;     // end points for the setup datalines
-			double minDistLanes, minDistEdges, angleDelta, angleDeltaMin;
+			double minDistLanes, minDistEdges, angleDelta;
 			Point intersect, point1, point2;
 
 			for (int i = 0; i < 3; i++) {
@@ -264,11 +265,6 @@ int main() {
 			
 			}
 
-			for (int i = 0; i < 4; i++) {
-				angleDeltaToLane.push_back(angle - angleDeltaToLane[i]);
-				angleDeltaMin = CV_PI * 0.25;
-				if (abs(angle - angleDeltaToLane[i]) < angleDeltaMin) { angleDeltaMin = angle - angleDeltaToLane[i]; }
-			}
 
 
 
@@ -310,25 +306,25 @@ int main() {
 
 			if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
-					cout << "Right (wall) - 0.7 s" << endl;
+					cout << "Right (wall)" << endl;
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(700);
+					Sleep(600);
 					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					//SendInput(1, &ip, sizeof(INPUT));
 				}
 				else {
-					cout << "Left (wall) - 0.7 s" << endl;
+					cout << "Left (wall)" << endl;
 					ip.mi.dx = 3456 / 2 * 17; // turn left for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(700);
+					Sleep(600);
 					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					//SendInput(1, &ip, sizeof(INPUT));
 				}
 			}
-			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right
+			else if (datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && 
 				ip.mi.dx = 3456 / 2 * 20; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
@@ -337,7 +333,7 @@ int main() {
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
 			}
-			else if (datalineDistanceLanes[0] < 300) {    // lanes on the left
+			else if (datalineDistanceLanes[0] < 300 && sin(4 * angle) > 0) {    // lanes on the left      // datalineDistanceLanes[0] < 300 && 
 				ip.mi.dx = 3456 / 2 * 17; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
@@ -352,6 +348,10 @@ int main() {
 				SendInput(1, &ip, sizeof(INPUT));
 			}
 
+
+
+
+
 			// Vehicle Crash postprocess: take another pic and if its too similar (imgRawNorm and imgRetakeNorm) reverse the vehicle backwards
 
 			Mat imgRetake = getMat(hWND);
@@ -365,7 +365,7 @@ int main() {
 
 			// cout << countNonZero(dif) << endl;
 
-
+			
 
 
 			if (countNonZero(dif) < 5000) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
@@ -380,10 +380,6 @@ int main() {
 				}
 				else if (reversed) {
 					cout << "Right (after reversing) - 1 s" << endl;
-					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
-					Sleep(1500);
-					key.ki.dwFlags = KEYEVENTF_KEYUP;
-					SendInput(1, &key, sizeof(key));
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
