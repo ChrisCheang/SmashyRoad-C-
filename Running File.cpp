@@ -191,16 +191,28 @@ int main() {
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
 
+		vector<Point> points;
+		vector<double> pointsDistance;
+
+
+		vector<Vec4i> datalineSetup;
+		vector<double> datalineDistanceLanes, datalineDistanceEdges;
+		vector<Point> endPoints;     // end points for the setup datalines
+		double minDistLanes, minDistEdges, angleDelta;
+		Point intersect, point1, point2;
+
+
+
 		if (lines.size() == 0) {
 			for (int i = 7; i > 0; i--) {
 				cout << "Game Restart, T - " << i << " seconds" << endl;
 				bool reversed = false;
+				if (datalineDistanceEdges.size() != 0) { datalineDistanceEdges[1] = 1000; }
 				Sleep(1000);
 			}
 		}
 		else {
-			vector<Point> points;
-			vector<double> pointsDistance;
+			
 
 			for (size_t i = 0; i < lines.size(); i++) {
 				points.push_back(Point(lines[i][0], lines[i][1]));
@@ -231,11 +243,8 @@ int main() {
 
 
 
-			vector<Vec4i> datalineSetup;
-			vector<double> datalineDistanceLanes, datalineDistanceEdges;
-			vector<Point> endPoints;     // end points for the setup datalines
-			double minDistLanes, minDistEdges, angleDelta;
-			Point intersect, point1, point2;
+
+
 
 			for (int i = 0; i < 3; i++) {
 				minDistLanes = 1000, minDistEdges = 1000;    // also doubles as the length of the setup datalines
@@ -277,6 +286,7 @@ int main() {
 
 			if (not setup) {
 				for (int i = 5; i > 0; i--) {
+					datalineDistanceEdges[1] = 1000;
 					cout << "Ready, T - " << i << " seconds" << endl;
 					Sleep(1000);
 				}
@@ -311,8 +321,8 @@ int main() {
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(600);
-					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					//SendInput(1, &ip, sizeof(INPUT));
+					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					SendInput(1, &ip, sizeof(INPUT));
 				}
 				else {
 					cout << "Left (wall)" << endl;
@@ -320,8 +330,8 @@ int main() {
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(600);
-					//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					//SendInput(1, &ip, sizeof(INPUT));
+					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					SendInput(1, &ip, sizeof(INPUT));
 				}
 			}
 			else if (datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && 
@@ -363,7 +373,7 @@ int main() {
 
 			absdiff(imgRawNorm, imgRetakeNorm, dif);
 
-			// cout << countNonZero(dif) << endl;
+
 
 
 
@@ -373,8 +383,8 @@ int main() {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
 					Sleep(2000);
-					key.ki.dwFlags = KEYEVENTF_KEYUP;
-					SendInput(1, &key, sizeof(key));
+					//key.ki.dwFlags = KEYEVENTF_KEYUP;
+					//SendInput(1, &key, sizeof(key));
 					reversed = true;
 					cout << "Finished reversing" << endl;
 				}
@@ -383,8 +393,10 @@ int main() {
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(1000);
+					Sleep(700);
 					reversed = false;
+					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+					SendInput(1, &ip, sizeof(INPUT));
 					cout << "Continue!" << endl;
 					/*
 					cout << "Right (after reversing) - 1 s" << endl;
