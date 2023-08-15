@@ -179,17 +179,29 @@ int main() {
 
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
 	bool reversed = false; // prevents reverse lock cycle; initiates as false
+	bool driving = true; // boolean to identify driving or running states
 
 	while (true) {
 
+		// line detection of top left little box for orientation + colour detection of middle bit for state (in vehicle or not)
+
 		Mat imgRaw = getMat(hWND);
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
+		Mat imgBoxMid = imgRaw(Range(screenSize.y/2 - 50, screenSize.y/2 + 50), Range(screenSize.x/2 - 50, screenSize.x/2 + 50));
+		Mat imgBoxBrownFig, imgBoxSmoke;
+		inRange(imgBoxMid, Scalar(0, 76, 150), Scalar(5, 85, 160), imgBoxBrownFig);
+		inRange(imgBoxMid, Scalar(56, 77, 96), Scalar(60, 83, 104), imgBoxSmoke);
+		int brownCount = countNonZero(imgBoxBrownFig);
+		int smokeCount = countNonZero(imgBoxSmoke);
+		cout << brownCount << " ";
 		Mat imgGrayBox, imgBlurBox, edges;
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified)
 		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
 		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
+
+		//
 
 		vector<Point> points;
 		vector<double> pointsDistance;
@@ -229,6 +241,8 @@ int main() {
 			double angle = atan2(dirPoint.y, dirPoint.x);
 			// cout << "Angle = " << angle << " radians" << endl;
 
+			// line detection of resized whole screen for lanes and boundaries
+
 			Mat imgRawResize, imgGray, imgBlur, edgesLanes;
 			resize(imgRaw, imgRawResize, Size(screenSize.x / 4, screenSize.y / 4), INTER_LINEAR);
 			cvtColor(imgRawResize, imgGray, cv::COLOR_BGR2GRAY);
@@ -237,13 +251,11 @@ int main() {
 			vector<Vec4i> boundaries;
 			HoughLinesP(edgesLanes, boundaries, 1, CV_PI / 180, 80 / 4, 300 / 4, 8 / 4);   // divide used to make it easier to change detection resolution
 
+			//
+
 			for (size_t j = 0; j < boundaries.size(); j++) {
 				line(imgRaw, Point(boundaries[j][0] * 4, boundaries[j][1] * 4), Point(boundaries[j][2] * 4, boundaries[j][3] * 4), Scalar(0, 255, 0), 2);
 			}
-
-
-
-
 
 
 			for (int i = 0; i < 3; i++) {
@@ -382,7 +394,7 @@ int main() {
 				if (not reversed) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
-					Sleep(2000);
+					Sleep(3000);
 					//key.ki.dwFlags = KEYEVENTF_KEYUP;
 					//SendInput(1, &key, sizeof(key));
 					reversed = true;
@@ -393,7 +405,7 @@ int main() {
 					ip.mi.dx = 3456 / 2 * 20; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(700);
+					Sleep(1000);
 					reversed = false;
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					SendInput(1, &ip, sizeof(INPUT));
