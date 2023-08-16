@@ -180,6 +180,7 @@ int main() {
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
 	bool reversed = false; // prevents reverse lock cycle; initiates as false
 	bool driving = true; // boolean to identify driving or running states
+	bool damaged = false; // boolean to notify when to change vehicles
 
 	while (true) {
 
@@ -187,13 +188,37 @@ int main() {
 
 		Mat imgRaw = getMat(hWND);
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
-		Mat imgBoxMid = imgRaw(Range(screenSize.y/2 - 50, screenSize.y/2 + 50), Range(screenSize.x/2 - 50, screenSize.x/2 + 50));
-		Mat imgBoxBrownFig, imgBoxSmoke;
-		inRange(imgBoxMid, Scalar(0, 76, 150), Scalar(5, 85, 160), imgBoxBrownFig);
-		inRange(imgBoxMid, Scalar(56, 77, 96), Scalar(60, 83, 104), imgBoxSmoke);
-		int brownCount = countNonZero(imgBoxBrownFig);
+		
+		Mat imgBoxMid = imgRaw(Range(250, 290), Range(60, 100));  // (Range(802, 810), Range(601, 612));
+		Mat imgBoxRedHeart, imgBoxSmoke;
+		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
+		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
+		inRange(imgBoxMid, Scalar(56, 77, 96), Scalar(60, 83, 107), imgBoxSmoke);
+		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
-		cout << brownCount << " ";
+		int redCounter = 0, smokeCounter = 0;
+
+		if (redCount > 200) { 
+			if (redCounter <= 3) { ++redCounter; }
+		}
+		else { 
+			if (redCounter >= 0) { --redCounter; }
+		}
+		if (smokeCount > 10) {
+			if (smokeCounter <= 15) { ++smokeCounter; }
+		}
+		else {
+			if (smokeCounter >= 0) { --smokeCounter; }
+		}
+
+		if (redCounter > 0) { driving = false, cout << "Running... "; }
+		else { driving = true; }
+		if (smokeCounter > 7) { damaged = true, cout << "Smoking... "; }
+		else { damaged = false; }
+
+		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
+
+
 		Mat imgGrayBox, imgBlurBox, edges;
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified)
 		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
@@ -296,6 +321,8 @@ int main() {
 			moveWindow("Output", 0, 0);
 			waitKey(1);
 
+			
+
 			if (not setup) {
 				for (int i = 5; i > 0; i--) {
 					datalineDistanceEdges[1] = 1000;
@@ -315,21 +342,29 @@ int main() {
 
 
 			// dx and dy values are a bit weird but these work ish (laptop screen size = 3456 x 2160)
+			// turns out mouse position has nothing to do with screen size, lower right is (65535,65535)
 
 			INPUT ip = {};   // mouse clicks
 			ip.type = 0;
-			ip.mi.dy = 2160 / 2 * 20;
+			ip.mi.dy = 32768; // 0.5 * 65535 (scale factor) = 32768
+			
 
 			INPUT key = {};  // press down key for reverse
 			key.type = INPUT_KEYBOARD;
 			key.ki.wVk = 0x28;
+
+			INPUT exitEnter = {}; // get out/in a vehicle
+			exitEnter.type = 0;
+			exitEnter.mi.dx = 0.8 * 65535; // location of bottom right button
+			exitEnter.mi.dy = 45000; 
+			
 
 
 
 			if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall)" << endl;
-					ip.mi.dx = 3456 / 2 * 20; // turn right for more
+					ip.mi.dx = 0.8 * 65535; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(600);
@@ -338,7 +373,7 @@ int main() {
 				}
 				else {
 					cout << "Left (wall)" << endl;
-					ip.mi.dx = 3456 / 2 * 17; // turn left for more
+					ip.mi.dx = 0.4 * 65535; // turn left for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(600);
@@ -347,7 +382,7 @@ int main() {
 				}
 			}
 			else if (datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && 
-				ip.mi.dx = 3456 / 2 * 20; // turn right
+				ip.mi.dx = 0.6 * 65535; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
 				Sleep((300 - datalineDistanceLanes[2]) * 0.5);
@@ -356,7 +391,7 @@ int main() {
 				cout << "Right" << endl;
 			}
 			else if (datalineDistanceLanes[0] < 300 && sin(4 * angle) > 0) {    // lanes on the left      // datalineDistanceLanes[0] < 300 && 
-				ip.mi.dx = 3456 / 2 * 17; // turn left
+				ip.mi.dx = 0.4 * 65535; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
 				Sleep((300 - datalineDistanceLanes[0]) * 0.5);
@@ -371,8 +406,14 @@ int main() {
 			}
 
 
+			if (damaged) {
+				exitEnter.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+				SendInput(1, &exitEnter, sizeof(INPUT));
+				exitEnter.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+				SendInput(1, &exitEnter, sizeof(INPUT));
+			}
 
-
+			cout << "damage = " << damaged << ", smokeCounter = " << smokeCount;
 
 			// Vehicle Crash postprocess: take another pic and if its too similar (imgRawNorm and imgRetakeNorm) reverse the vehicle backwards
 
@@ -394,15 +435,15 @@ int main() {
 				if (not reversed) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
-					Sleep(3000);
-					//key.ki.dwFlags = KEYEVENTF_KEYUP;
-					//SendInput(1, &key, sizeof(key));
+					Sleep(2000);
+					key.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &key, sizeof(key));
 					reversed = true;
 					cout << "Finished reversing" << endl;
 				}
 				else if (reversed) {
 					cout << "Right (after reversing) - 1 s" << endl;
-					ip.mi.dx = 3456 / 2 * 20; // turn right for more
+					ip.mi.dx = 0.6 * 65535; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(1000);
