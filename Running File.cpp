@@ -181,6 +181,7 @@ int main() {
 	bool reversed = false; // prevents reverse lock cycle; initiates as false
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
+	int redCounter = 1, smokeCounter = 1; // cumulative 
 
 	while (true) {
 
@@ -196,24 +197,24 @@ int main() {
 		inRange(imgBoxMid, Scalar(56, 77, 96), Scalar(60, 83, 107), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
-		int redCounter = 0, smokeCounter = 0;
+		
 
 		if (redCount > 200) { 
 			if (redCounter <= 3) { ++redCounter; }
 		}
 		else { 
-			if (redCounter >= 0) { --redCounter; }
+			if (redCounter >= 1) { --redCounter; }
 		}
-		if (smokeCount > 10) {
-			if (smokeCounter <= 15) { ++smokeCounter; }
+		if (smokeCount > 3) {
+			if (smokeCounter <= 30) { ++smokeCounter; }
 		}
 		else {
-			if (smokeCounter >= 0) { --smokeCounter; }
+			if (smokeCounter >= 1) { --smokeCounter; }
 		}
 
 		if (redCounter > 0) { driving = false, cout << "Running... "; }
 		else { driving = true; }
-		if (smokeCounter > 7) { damaged = true, cout << "Smoking... "; }
+		if (smokeCounter > 10) { damaged = true, cout << "Smoking... "; }
 		else { damaged = false; }
 
 		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
@@ -413,7 +414,9 @@ int main() {
 				SendInput(1, &exitEnter, sizeof(INPUT));
 			}
 
-			cout << "damage = " << damaged << ", smokeCounter = " << smokeCount;
+			cout << "damage = " << damaged << ", smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+
+
 
 			// Vehicle Crash postprocess: take another pic and if its too similar (imgRawNorm and imgRetakeNorm) reverse the vehicle backwards
 
@@ -429,9 +432,7 @@ int main() {
 
 
 
-
-
-			if (countNonZero(dif) < 5000) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
+			if (countNonZero(dif) < 5000 && driving) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
 				if (not reversed) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
