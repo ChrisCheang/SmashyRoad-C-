@@ -194,7 +194,7 @@ int main() {
 		Mat imgBoxRedHeart, imgBoxSmoke;
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
-		inRange(imgBoxMid, Scalar(56, 77, 96), Scalar(60, 83, 107), imgBoxSmoke);
+		inRange(imgBoxMid, Scalar(55, 76, 86), Scalar(60, 83, 97), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 		
@@ -205,8 +205,8 @@ int main() {
 		else { 
 			if (redCounter >= 1) { --redCounter; }
 		}
-		if (smokeCount > 3) {
-			if (smokeCounter <= 30) { ++smokeCounter; }
+		if (smokeCount > 10) {
+			if (smokeCounter <= 20) { ++smokeCounter; }
 		}
 		else {
 			if (smokeCounter >= 1) { --smokeCounter; }
@@ -221,7 +221,11 @@ int main() {
 
 
 		Mat imgGrayBox, imgBlurBox, edges;
-		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified)
+		imshow("ha", imgBox);
+		Mat testing;
+		inRange(imgBox, Scalar(200, 100, 45), Scalar(255, 130, 75), testing);
+		imshow("after inRange", testing);
+		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified) // inRange(imgBox, Scalar(45, 100, 200), Scalar(75, 130, 200), imgBox);
 		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
 		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
