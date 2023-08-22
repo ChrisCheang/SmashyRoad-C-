@@ -224,18 +224,15 @@ int main() {
 		Mat imgGrayBox, imgBlurBox, edges;
 		Mat maskPre, mask, masked;
 		cvtColor(imgBox, maskPre, cv::COLOR_BGR2HSV);
-		inRange(maskPre, Scalar(0, 120, 150), Scalar(179, 255, 255), mask);
-		bitwise_and(imgBox,imgBox, masked, mask=mask);
-		cvtColor(masked, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified) // inRange(imgBox, Scalar(45, 100, 200), Scalar(75, 130, 200), imgBox);
-		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
-		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
+		inRange(maskPre, Scalar(80, 120, 150), Scalar(130, 255, 255), mask);
+		Canny(mask, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
 		
 		imshow("ha", imgBox);
 		moveWindow("ha", 1000, 200);
 
-		imshow("after inRange", masked);
+		imshow("after inRange", mask);
 		moveWindow("after inRange", 1000, 300);
 
 		imshow("Canny of small box", edges);
