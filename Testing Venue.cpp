@@ -96,6 +96,79 @@ Mat getMat(HWND hWND) {
 	return mat;
 }
 
+bool onSegment(Point p, Point q, Point r) {
+	// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/ - line intersect checks
+	if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
+		q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
+		return true;
+
+	return false;
+}
+
+// To find orientation of ordered triplet (p, q, r).
+// The function returns following values
+// 0 --> p, q and r are collinear
+// 1 --> Clockwise
+// 2 --> Counterclockwise
+int orientation(Point p, Point q, Point r)
+{
+	// See https://www.geeksforgeeks.org/orientation-3-ordered-points/
+	// for details of below formula.
+	int val = (q.y - p.y) * (r.x - q.x) -
+		(q.x - p.x) * (r.y - q.y);
+
+	if (val == 0) return 0;  // collinear
+
+	return (val > 0) ? 1 : 2; // clock or counterclock wise
+}
+
+// The main function that returns true if line segment 'p1q1'
+// and 'p2q2' intersect.
+bool doIntersect(Point p1, Point q1, Point p2, Point q2)
+{
+	// Find the four orientations needed for general and
+	// special cases
+	int o1 = orientation(p1, q1, p2);
+	int o2 = orientation(p1, q1, q2);
+	int o3 = orientation(p2, q2, p1);
+	int o4 = orientation(p2, q2, q1);
+
+	// General case
+	if (o1 != o2 && o3 != o4)
+		return true;
+
+	// Special Cases
+	// p1, q1 and p2 are collinear and p2 lies on segment p1q1
+	if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+	// p1, q1 and q2 are collinear and q2 lies on segment p1q1
+	if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+	// p2, q2 and p1 are collinear and p1 lies on segment p2q2
+	if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+	// p2, q2 and q1 are collinear and q1 lies on segment p2q2
+	if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+	return false; // Doesn't fall in any of the above cases
+}
+
+Point intersection(Vec4i a, Vec4i b) {
+	double d = (a[0] - a[2]) * (b[1] - b[3]) - (a[1] - a[3]) * (b[0] - b[2]); // determinant?
+	//if (d == 0) return ;
+
+	double xi = ((b[0] - b[2]) * (a[0] * a[3] - a[1] * a[2]) - (a[0] - a[2]) * (b[0] * b[3] - b[1] * b[2])) / d;  // found on stack, probably cramer's rule
+	double yi = ((b[1] - b[3]) * (a[0] * a[3] - a[1] * a[2]) - (a[1] - a[3]) * (b[0] * b[3] - b[1] * b[2])) / d;
+
+	return Point(xi, yi);
+}
+
+double pointDistanceToCentre(Point a) {
+	return sqrt(pow(a.x - screenSize.x / 2, 2) + pow(a.y - screenSize.y / 2, 2));
+}
+
+
+
 int main() {
 
 
@@ -122,6 +195,7 @@ int main() {
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
 		inRange(imgBoxMid, Scalar(55, 76, 86), Scalar(60, 83, 97), imgBoxSmoke);
+		
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 
@@ -144,20 +218,28 @@ int main() {
 		if (smokeCounter > 10) { damaged = true, cout << "Smoking... "; }
 		else { damaged = false; }
 
-		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
+
 
 
 		Mat imgGrayBox, imgBlurBox, edges;
-		imshow("ha", imgBox);
-		Mat testing;
-		inRange(imgBox, Scalar(150, 70, 45), Scalar(255, 170, 100), testing);
-		imshow("after inRange", testing);
+		Mat maskPre, mask, masked;
+		cvtColor(imgBox, maskPre, cv::COLOR_BGR2HSV);
+		inRange(maskPre, Scalar(0, 0, 130), Scalar(179, 255, 255), mask);
+		bitwise_and(imgBox,imgBox, masked, mask=mask);
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified) // inRange(imgBox, Scalar(45, 100, 200), Scalar(75, 130, 200), imgBox);
 		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
 		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
-		imshow("Canny of small box", edges);
+		
+		//imshow("ha", imgBox);
+		//moveWindow("ha", 1000, 200);
+
+		imshow("after inRange", masked);
+		moveWindow("after inRange", 1000, 300);
+
+		//imshow("Canny of small box", edges);
+		//moveWindow("Canny of small box", 1000, 500);
 
 		//
 
@@ -216,11 +298,46 @@ int main() {
 			}
 
 
+			for (int i = 0; i < 3; i++) {
+				minDistLanes = 1000, minDistEdges = 1000;    // also doubles as the length of the setup datalines
+				endPoints.push_back(Point(screenSize.x / 2 + int(1000 * cos(angle + anglesVar[i])), screenSize.y / 2 - int(1000 * sin(angle + anglesVar[i]))));
+				datalineSetup.push_back(Vec4i(screenSize.x / 2, screenSize.y / 2, endPoints[i].x, endPoints[i].y));
+
+				for (int n = 0; n < boundaries.size(); n++) {
+					point1 = Point(boundaries[n][0] * 4, boundaries[n][1] * 4);
+					point2 = Point(boundaries[n][2] * 4, boundaries[n][3] * 4);
+					if (doIntersect(Point(screenSize.x / 2, screenSize.y / 2), endPoints[i], point1, point2)) {
+						intersect = intersection(datalineSetup[i], Vec4i(boundaries[n][0] * 4, boundaries[n][1] * 4, boundaries[n][2] * 4, boundaries[n][3] * 4));
+						angleDelta = abs(angle - atan2(point2.y - point1.y, point2.x - point1.x));
+
+						if (pointDistanceToCentre(intersect) < minDistEdges && angleDelta < 1.0 || angleDelta > 3.0) {    // edges, this ignores the edge case where the angle and line angle cross the atan2 - to + crossover, but this shouldnt be encountered
+							minDistEdges = pointDistanceToCentre(intersect);     // Red
+						}
+						else if (pointDistanceToCentre(intersect) < minDistLanes && 1.0 > angleDelta > CV_PI * 0.5 || 3.0 < angleDelta < CV_PI) {
+							minDistLanes = pointDistanceToCentre(intersect);   // Blue
+						}
+					}
+				}
+				datalineDistanceLanes.push_back(minDistLanes);
+				datalineDistanceEdges.push_back(minDistEdges);
+				line(imgRaw, Point(screenSize.x / 2 + 10, screenSize.y / 2 + 10), Point(screenSize.x / 2 + int(minDistLanes * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistLanes * sin(angle + anglesVar[i]))), Scalar(255, 0, 0), 3);
+				line(imgRaw, Point(screenSize.x / 2, screenSize.y / 2), Point(screenSize.x / 2 + int(minDistEdges * cos(angle + anglesVar[i])), screenSize.y / 2 - int(minDistEdges * sin(angle + anglesVar[i]))), Scalar(0, 0, 255), 3);
+
+
+			}
+
+
+
+
 			Mat img;
 			//Mat justDatalinesResize;
-			resize(imgRaw, img, Size(screenSize.x / 6, screenSize.y / 6), INTER_LINEAR);
+			resize(imgRaw, img, Size(screenSize.x / 3, screenSize.y / 3), INTER_LINEAR);
+
 			imshow("Output", img);
 			moveWindow("Output", 0, 0);
+
+			
+
 			waitKey(1);
 
 
@@ -235,11 +352,23 @@ int main() {
 			}
 
 
+			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
 
 
 
+			// Vehicle Crash postprocess: take another pic and if its too similar (imgRawNorm and imgRetakeNorm) reverse the vehicle backwards
 
-			
+			Mat imgRetake = getMat(hWND);
+			Mat imgRetakeResize, imgRetakeGray, imgRawNorm, imgRetakeNorm, dif;
+			resize(imgRetake, imgRetakeResize, Size(screenSize.x / 4, screenSize.y / 4), INTER_LINEAR);
+			cvtColor(imgRetakeResize, imgRetakeGray, cv::COLOR_BGR2GRAY);
+			normalize(imgGray, imgRawNorm, 0, 1, NORM_MINMAX, -1);
+			normalize(imgRetakeGray, imgRetakeNorm, 0, 1, NORM_MINMAX, -1);
+
+			absdiff(imgRawNorm, imgRetakeNorm, dif);
+
+
+			cout << endl;
 
 
 
