@@ -181,7 +181,7 @@ int main() {
 	bool reversed = false; // prevents reverse lock cycle; initiates as false
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
-	int redCounter = 1, smokeCounter = 1; // cumulative 
+	int redCounter = 1, smokeCounter = 1; // cumulative counters for damage and running states to notify the above
 
 	while (true) {
 
@@ -223,13 +223,14 @@ int main() {
 		Mat imgGrayBox, imgBlurBox, edges;
 		imshow("ha", imgBox);
 		Mat testing;
-		inRange(imgBox, Scalar(200, 100, 45), Scalar(255, 130, 75), testing);
+		inRange(imgBox, Scalar(150, 70, 45), Scalar(255, 170, 100), testing);
 		imshow("after inRange", testing);
 		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified) // inRange(imgBox, Scalar(45, 100, 200), Scalar(75, 130, 200), imgBox);
 		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
 		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
+		imshow("Canny of small box", edges);
 
 		//
 
@@ -329,7 +330,7 @@ int main() {
 			
 
 			if (not setup) {
-				for (int i = 5; i > 0; i--) {
+				for (int i = 3; i > 0; i--) {
 					datalineDistanceEdges[1] = 1000;
 					cout << "Ready, T - " << i << " seconds" << endl;
 					Sleep(1000);
@@ -418,7 +419,7 @@ int main() {
 				SendInput(1, &exitEnter, sizeof(INPUT));
 			}
 
-			cout << "damage = " << damaged << ", smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
 
 
 
