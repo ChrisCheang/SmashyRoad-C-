@@ -189,7 +189,7 @@ int main() {
 
 		Mat imgRaw = getMat(hWND);
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
-		
+
 		Mat imgBoxMid = imgRaw(Range(250, 290), Range(60, 100));  // (Range(802, 810), Range(601, 612));
 		Mat imgBoxRedHeart, imgBoxSmoke;
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
@@ -197,12 +197,12 @@ int main() {
 		inRange(imgBoxMid, Scalar(55, 76, 86), Scalar(60, 83, 97), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
-		
 
-		if (redCount > 200) { 
+
+		if (redCount > 200) {
 			if (redCounter <= 3) { ++redCounter; }
 		}
-		else { 
+		else {
 			if (redCounter >= 1) { --redCounter; }
 		}
 		if (smokeCount > 10) {
@@ -219,18 +219,22 @@ int main() {
 
 		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
 
-
 		Mat imgGrayBox, imgBlurBox, edges;
-		imshow("ha", imgBox);
-		Mat testing;
-		inRange(imgBox, Scalar(150, 70, 45), Scalar(255, 170, 100), testing);
-		imshow("after inRange", testing);
-		cvtColor(imgBox, imgGrayBox, cv::COLOR_BGR2GRAY); // it seems for c++ the target image also needs to be specified) // inRange(imgBox, Scalar(45, 100, 200), Scalar(75, 130, 200), imgBox);
-		GaussianBlur(imgGrayBox, imgBlurBox, Size(3, 3), 0);
-		Canny(imgBlurBox, edges, 100, 200);    // original thresholds 100, 200
+		Mat maskPre, mask, masked;
+		cvtColor(imgBox, maskPre, cv::COLOR_BGR2HSV);
+		inRange(maskPre, Scalar(80, 120, 150), Scalar(130, 255, 255), mask);
+		Canny(mask, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
+
+		imshow("ha", imgBox);
+		moveWindow("ha", 1300, 200);
+
+		imshow("after inRange", mask);
+		moveWindow("after inRange", 1300, 300);
+
 		imshow("Canny of small box", edges);
+		moveWindow("Canny of small box", 1300, 500);
 
 		//
 
@@ -247,7 +251,7 @@ int main() {
 
 
 		if (lines.size() == 0) {
-			for (int i = 7; i > 0; i--) {
+			for (int i = 5; i > 0; i--) {
 				cout << "Game Restart, T - " << i << " seconds" << endl;
 				bool reversed = false;
 				if (datalineDistanceEdges.size() != 0) { datalineDistanceEdges[1] = 1000; }
@@ -255,7 +259,7 @@ int main() {
 			}
 		}
 		else {
-			
+
 
 			for (size_t i = 0; i < lines.size(); i++) {
 				points.push_back(Point(lines[i][0], lines[i][1]));
@@ -327,7 +331,7 @@ int main() {
 			moveWindow("Output", 0, 0);
 			waitKey(1);
 
-			
+
 
 			if (not setup) {
 				for (int i = 3; i > 0; i--) {
@@ -353,7 +357,7 @@ int main() {
 			INPUT ip = {};   // mouse clicks
 			ip.type = 0;
 			ip.mi.dy = 32768; // 0.5 * 65535 (scale factor) = 32768
-			
+
 
 			INPUT key = {};  // press down key for reverse
 			key.type = INPUT_KEYBOARD;
@@ -362,8 +366,8 @@ int main() {
 			INPUT exitEnter = {}; // get out/in a vehicle
 			exitEnter.type = 0;
 			exitEnter.mi.dx = 0.8 * 65535; // location of bottom right button
-			exitEnter.mi.dy = 45000; 
-			
+			exitEnter.mi.dy = 45000;
+
 
 
 
