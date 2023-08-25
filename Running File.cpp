@@ -15,6 +15,11 @@
 #include <list>
 #include <algorithm>
 
+#include <conio.h>
+#include <stdio.h>
+#include <string>
+#include <ctime>
+
 #define WINVER 0x0500
 
 using namespace std;
@@ -185,9 +190,20 @@ int main() {
 
 	while (true) {
 
-		// line detection of top left little box for orientation + colour detection of middle bit for state (in vehicle or not)
+		// line detection of top left little box for orientation + colour detection of middle bit for state (in vehicle or not) + screenshot (more convenient to place here)
 
 		Mat imgRaw = getMat(hWND);
+
+		// Manual screenshot for data collection
+
+		if (GetKeyState('S') & 0x8000/*Check if high-order bit is set (1 << 15)*/) // time from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+		{
+			time_t now = time(0);
+			char* dt = ctime(&now);
+			imwrite("testscreenshot.jpg", imgRaw);
+			cout << " Screenshot taken!" << endl;
+		}
+
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
 
 		Mat imgBoxMid = imgRaw(Range(250, 290), Range(60, 100));  // (Range(802, 810), Range(601, 612));
@@ -481,8 +497,7 @@ int main() {
 			}
 			else { reversed = false; }
 
-			// Manual screenshot section for data collection
-
+			
 
 			cout << endl;
 
