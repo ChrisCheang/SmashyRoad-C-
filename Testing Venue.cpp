@@ -15,6 +15,14 @@
 #include <list>
 #include <algorithm>
 
+#include <conio.h>
+#include <stdio.h>
+#include <string>
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <time.h>
+
 #define WINVER 0x0500
 
 using namespace std;
@@ -188,14 +196,29 @@ int main() {
 		// line detection of top left little box for orientation + colour detection of middle bit for state (in vehicle or not)
 
 		Mat imgRaw = getMat(hWND);
+
+		// Manual screenshot for data collection
+
+		if (GetKeyState('S') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
+			auto now = chrono::system_clock::now();
+			time_t time = chrono::system_clock::to_time_t(now);
+
+			std::ostringstream fileName;
+			fileName << "Screenshot " << time << ".jpg";
+			std::string screenshotName = fileName.str();
+			imwrite(screenshotName, imgRaw);
+			cout << time << " screenshot taken! ";
+		}
+
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
 
 		Mat imgBoxMid = imgRaw(Range(250, 290), Range(60, 100));  // (Range(802, 810), Range(601, 612));
 		Mat imgBoxRedHeart, imgBoxSmoke;
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
-		inRange(imgBoxMid, Scalar(55, 76, 86), Scalar(60, 83, 97), imgBoxSmoke);
-		
+		cvtColor(imgBoxMid, imgBoxMid, cv::COLOR_BGR2HSV);
+		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(25, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
+
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 
@@ -228,7 +251,7 @@ int main() {
 		Canny(mask, edges, 100, 200);    // original thresholds 100, 200
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
-		
+
 		imshow("ha", imgBox);
 		moveWindow("ha", 1000, 200);
 
@@ -333,7 +356,7 @@ int main() {
 			imshow("Output", img);
 			moveWindow("Output", 0, 0);
 
-			
+
 
 			waitKey(1);
 
