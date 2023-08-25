@@ -421,6 +421,7 @@ int main() {
 				SendInput(1, &exitEnter, sizeof(INPUT));
 				exitEnter.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &exitEnter, sizeof(INPUT));
+				smokeCounter = 1;
 			}
 
 			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
@@ -479,6 +480,8 @@ int main() {
 				}
 			}
 			else { reversed = false; }
+
+			// Manual screenshot section for data collection
 
 
 			cout << endl;
