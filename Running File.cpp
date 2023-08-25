@@ -207,7 +207,7 @@ int main() {
 			fileName << "Screenshot " << time << ".jpg";
 			std::string screenshotName = fileName.str();
 			imwrite(screenshotName, imgRaw);
-			cout << " Screenshot taken!" << endl;
+			cout << time << " screenshot taken! ";
 		}
 
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
@@ -216,7 +216,8 @@ int main() {
 		Mat imgBoxRedHeart, imgBoxSmoke;
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
-		inRange(imgBoxMid, Scalar(55, 76, 86), Scalar(60, 83, 97), imgBoxSmoke);
+		cvtColor(imgBoxMid, imgBoxMid, cv::COLOR_BGR2HSV);
+		inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 
