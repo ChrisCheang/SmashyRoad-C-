@@ -18,7 +18,10 @@
 #include <conio.h>
 #include <stdio.h>
 #include <string>
+#include <chrono>
 #include <ctime>
+#include <sstream>
+#include <time.h>
 
 #define WINVER 0x0500
 
@@ -196,11 +199,14 @@ int main() {
 
 		// Manual screenshot for data collection
 
-		if (GetKeyState('S') & 0x8000/*Check if high-order bit is set (1 << 15)*/) // time from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
-		{
-			time_t now = time(0);
-			char* dt = ctime(&now);
-			imwrite("testscreenshot.jpg", imgRaw);
+		if (GetKeyState('S') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
+			auto now = chrono::system_clock::now();
+			time_t time = chrono::system_clock::to_time_t(now);
+			
+			std::ostringstream fileName;
+			fileName << "Screenshot " << time << ".jpg";
+			std::string screenshotName = fileName.str();
+			imwrite(screenshotName, imgRaw);
 			cout << " Screenshot taken!" << endl;
 		}
 
