@@ -202,7 +202,7 @@ int main() {
 		if (GetKeyState('S') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
 			auto now = chrono::system_clock::now();
 			time_t time = chrono::system_clock::to_time_t(now);
-			
+
 			std::ostringstream fileName;
 			fileName << "Screenshot " << time << ".jpg";
 			std::string screenshotName = fileName.str();
@@ -217,7 +217,7 @@ int main() {
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
 		cvtColor(imgBoxMid, imgBoxMid, cv::COLOR_BGR2HSV);
-		inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
+		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(25, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 
@@ -504,7 +504,7 @@ int main() {
 			}
 			else { reversed = false; }
 
-			
+
 
 			cout << endl;
 
