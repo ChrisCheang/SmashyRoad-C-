@@ -186,10 +186,9 @@ int main() {
 
 
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
-	bool reversed = false; // prevents reverse lock cycle; initiates as false
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
-	int redCounter = 1, smokeCounter = 1; // cumulative counters for damage and running states to notify the above
+	int redCounter = 1, smokeCounter = 1, reverseToken = 1; // cumulative counters for damage, running and reverse states to notify the above
 
 	while (true) {
 
@@ -217,7 +216,7 @@ int main() {
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
 		cvtColor(imgBoxMid, imgBoxMid, cv::COLOR_BGR2HSV);
-		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(25, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
+		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(15, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
 
@@ -447,7 +446,7 @@ int main() {
 				smokeCounter = 1;
 			}
 
-			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter << ", reverseToken = " << reverseToken;
 
 
 
@@ -466,22 +465,24 @@ int main() {
 
 
 			if (countNonZero(dif) < 5000 && driving) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
-				if (not reversed) {
+				if (reverseToken == 0) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
 					Sleep(2000);
 					key.ki.dwFlags = KEYEVENTF_KEYUP;
 					SendInput(1, &key, sizeof(key));
-					reversed = true;
+					reverseToken = 5;
 					cout << "Finished reversing" << endl;
 				}
-				else if (reversed) {
+				else {
 					cout << "Right (after reversing) - 1 s" << endl;
 					ip.mi.dx = 0.6 * 65535; // turn right for more
 					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 					SendInput(1, &ip, sizeof(INPUT));
 					Sleep(1000);
-					reversed = false;
+					if (reverseToken > 0) {
+						--reverseToken;
+					}
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					SendInput(1, &ip, sizeof(INPUT));
 					cout << "Continue!" << endl;
@@ -502,7 +503,7 @@ int main() {
 					*/
 				}
 			}
-			else { reversed = false; }
+			
 
 
 
