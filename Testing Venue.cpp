@@ -217,7 +217,7 @@ int main() {
 		inRange(imgBoxMid, Scalar(52, 54, 240), Scalar(67, 63, 253), imgBoxRedHeart);
 		imgBoxMid = imgRaw(Range(screenSize.y / 2 - 100, screenSize.y / 2 + 100), Range(screenSize.x / 2 - 100, screenSize.x / 2 + 100)); // gives a slightly bigger detect area for smoke
 		cvtColor(imgBoxMid, imgBoxMid, cv::COLOR_BGR2HSV);
-		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(25, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
+		inRange(imgBoxMid, Scalar(0, 132, 132), Scalar(15, 190, 178), imgBoxSmoke); //old combo: inRange(imgBoxMid, Scalar(0, 70, 70), Scalar(20, 130, 90), imgBoxSmoke);
 
 		int redCount = countNonZero(imgBoxRedHeart);
 		int smokeCount = countNonZero(imgBoxSmoke);
