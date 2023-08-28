@@ -225,7 +225,7 @@ int main() {
 		else {
 			if (redCounter >= 1) { --redCounter; }
 		}
-		if (smokeCount > 20) {
+		if (smokeCount > 10) {
 			if (smokeCounter <= 30) { ++smokeCounter; }
 		}
 		else {
@@ -234,7 +234,7 @@ int main() {
 
 		if (redCounter > 0) { driving = false, cout << "Running... "; }
 		else { driving = true; }
-		if (smokeCounter > 20) { damaged = true, cout << "Smoking... "; }
+		if (smokeCounter > 15) { damaged = true, cout << "Smoking... "; }
 		else { damaged = false; }
 
 		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
@@ -447,6 +447,7 @@ int main() {
 			if (damaged) {
 				exitEnter.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &exitEnter, sizeof(INPUT));
+				Sleep(50);
 				exitEnter.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &exitEnter, sizeof(INPUT));
 				smokeCounter = 1;
