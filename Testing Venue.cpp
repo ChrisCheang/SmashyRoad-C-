@@ -186,10 +186,9 @@ int main() {
 
 
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
-	bool reversed = false; // prevents reverse lock cycle; initiates as false
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
-	int redCounter = 1, smokeCounter = 1; // cumulative counters for damage and running states to notify the above
+	int redCounter = 1, smokeCounter = 1, reverseToken = 0; // cumulative counters for damage and running states to notify the above
 
 	while (true) {
 
@@ -253,13 +252,13 @@ int main() {
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
 
 		imshow("ha", imgBox);
-		moveWindow("ha", 1000, 200);
+		moveWindow("ha", 1300, 200);
 
 		imshow("after inRange", mask);
-		moveWindow("after inRange", 1000, 300);
+		moveWindow("after inRange", 1300, 300);
 
 		imshow("Canny of small box", edges);
-		moveWindow("Canny of small box", 1000, 500);
+		moveWindow("Canny of small box", 1300, 500);
 
 		//
 
@@ -373,6 +372,7 @@ int main() {
 
 
 			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
 
 
 
