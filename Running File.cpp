@@ -234,7 +234,7 @@ int main() {
 
 		if (redCounter > 0) { driving = false, cout << "Running... "; }
 		else { driving = true; }
-		if (smokeCounter > 15) { damaged = true, cout << "Smoking... "; }
+		if (smokeCounter > 15) { damaged = true; }
 		else { damaged = false; }
 
 		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
@@ -430,7 +430,7 @@ int main() {
 				cout << "Left" << endl;
 			}
 			else if (abs(sin(4 * angle)) > 0.9) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
-				ip.mi.dx = (0.5 - 0.2 * sin(4*angle)) * 65535; // turn left/right
+				ip.mi.dx = (0.5 - 0.2 * sin(4 * angle)) * 65535; // turn left/right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
 				Sleep(150);
@@ -445,9 +445,9 @@ int main() {
 
 
 			if (damaged) {
+				cout << "Smoking... ";
 				exitEnter.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &exitEnter, sizeof(INPUT));
-				Sleep(50);
 				exitEnter.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &exitEnter, sizeof(INPUT));
 				smokeCounter = 1;
@@ -511,7 +511,7 @@ int main() {
 					*/
 				}
 			}
-			
+
 
 
 
