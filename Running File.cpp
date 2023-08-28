@@ -175,8 +175,6 @@ double pointDistanceToCentre(Point a) {
 	return sqrt(pow(a.x - screenSize.x / 2, 2) + pow(a.y - screenSize.y / 2, 2));
 }
 
-
-
 int main() {
 
 
@@ -188,7 +186,7 @@ int main() {
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
-	int redCounter = 1, smokeCounter = 1, reverseToken = 1; // cumulative counters for damage, running and reverse states to notify the above
+	int redCounter = 1, smokeCounter = 1, reverseToken = 0; // cumulative counters for damage, running and reverse states to notify the above
 
 	while (true) {
 
@@ -227,8 +225,8 @@ int main() {
 		else {
 			if (redCounter >= 1) { --redCounter; }
 		}
-		if (smokeCount > 10) {
-			if (smokeCounter <= 20) { ++smokeCounter; }
+		if (smokeCount > 20) {
+			if (smokeCounter <= 30) { ++smokeCounter; }
 		}
 		else {
 			if (smokeCounter >= 1) { --smokeCounter; }
@@ -236,7 +234,7 @@ int main() {
 
 		if (redCounter > 0) { driving = false, cout << "Running... "; }
 		else { driving = true; }
-		if (smokeCounter > 10) { damaged = true, cout << "Smoking... "; }
+		if (smokeCounter > 20) { damaged = true, cout << "Smoking... "; }
 		else { damaged = false; }
 
 		// cout << "redCount = " << redCount << " smokeCount = " << smokeCount << " ";
@@ -275,7 +273,7 @@ int main() {
 		if (lines.size() == 0) {
 			for (int i = 5; i > 0; i--) {
 				cout << "Game Restart, T - " << i << " seconds" << endl;
-				bool reversed = false;
+				bool reverseToken = false;
 				if (datalineDistanceEdges.size() != 0) { datalineDistanceEdges[1] = 1000; }
 				Sleep(1000);
 			}
@@ -413,7 +411,7 @@ int main() {
 					SendInput(1, &ip, sizeof(INPUT));
 				}
 			}
-			else if (datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && 
+			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
 				ip.mi.dx = 0.6 * 65535; // turn right
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
@@ -422,7 +420,7 @@ int main() {
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Right" << endl;
 			}
-			else if (datalineDistanceLanes[0] < 300 && sin(4 * angle) > 0) {    // lanes on the left      // datalineDistanceLanes[0] < 300 && 
+			else if (datalineDistanceLanes[0] < 300) {    // lanes on the left      // datalineDistanceLanes[0] < 300 && sin(4 * angle) > 0)
 				ip.mi.dx = 0.4 * 65535; // turn left
 				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
 				SendInput(1, &ip, sizeof(INPUT));
@@ -431,7 +429,15 @@ int main() {
 				SendInput(1, &ip, sizeof(INPUT));
 				cout << "Left" << endl;
 			}
-
+			else if (abs(sin(4 * angle)) > 0.9) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
+				ip.mi.dx = (0.5 - 0.2 * sin(4*angle)) * 65535; // turn left/right
+				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+				SendInput(1, &ip, sizeof(INPUT));
+				Sleep(150);
+				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+				SendInput(1, &ip, sizeof(INPUT));
+				cout << "Right" << endl;
+			}
 			else {
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 				SendInput(1, &ip, sizeof(INPUT));
@@ -446,7 +452,8 @@ int main() {
 				smokeCounter = 1;
 			}
 
-			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter << ", reverseToken = " << reverseToken;
+			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
 
 
 
@@ -471,7 +478,7 @@ int main() {
 					Sleep(2000);
 					key.ki.dwFlags = KEYEVENTF_KEYUP;
 					SendInput(1, &key, sizeof(key));
-					reverseToken = 5;
+					reverseToken = 1;
 					cout << "Finished reversing" << endl;
 				}
 				else {
