@@ -175,6 +175,16 @@ double pointDistanceToCentre(Point a) {
 	return sqrt(pow(a.x - screenSize.x / 2, 2) + pow(a.y - screenSize.y / 2, 2));
 }
 
+void screenPress(INPUT ip, int dx, int dy, int sleep) {
+	ip.mi.dx = dx;
+	ip.mi.dy = dy;
+	ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+	SendInput(1, &ip, sizeof(INPUT));
+	Sleep(sleep);
+	ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+	SendInput(1, &ip, sizeof(INPUT));
+}
+
 int main() {
 
 
@@ -186,9 +196,18 @@ int main() {
 	bool setup = false;  // gives a few seconds to setup the screen after initiation
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
+	bool close = false; // boolean for easier program termination
 	int redCounter = 1, smokeCounter = 1, reverseToken = 0; // cumulative counters for damage, running and reverse states to notify the above
 
-	while (true) {
+	INPUT ip = {};   // mouse clicks
+	ip.type = 0;
+
+	INPUT key = {};  // press down key for reverse
+	key.type = INPUT_KEYBOARD;
+	key.ki.wVk = 0x28;
+
+
+	while (not close) {
 
 		// line detection of top left little box for orientation + colour detection of middle bit for state (in vehicle or not) + screenshot (more convenient to place here)
 
@@ -205,6 +224,17 @@ int main() {
 			std::string screenshotName = fileName.str();
 			imwrite(screenshotName, imgRaw);
 			cout << time << " screenshot taken! ";
+		}
+		if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
+			close = true;
+		}
+		if (GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
+			screenPress(ip, 15000, 18000, 50);
+			Sleep(100);
+			screenPress(ip, 53000, 21000, 50);
+			Sleep(100);
+			screenPress(ip, 40000, 35000, 150);
+			Sleep(2000);
 		}
 
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
@@ -271,10 +301,13 @@ int main() {
 
 
 		if (lines.size() == 0) {
-			for (int i = 5; i > 0; i--) {
+			for (int i = 3; i > 0; i--) {
 				cout << "Game Restart, T - " << i << " seconds" << endl;
 				bool reverseToken = false;
 				if (datalineDistanceEdges.size() != 0) { datalineDistanceEdges[1] = 1000; }
+				if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {
+					close = true;
+				}
 				Sleep(1000);
 			}
 		}
@@ -367,76 +400,30 @@ int main() {
 
 
 
-			// Input Section
-
-
-
-			// dx and dy values are a bit weird but these work ish (laptop screen size = 3456 x 2160)
-			// turns out mouse position has nothing to do with screen size, lower right is (65535,65535)
-
-			INPUT ip = {};   // mouse clicks
-			ip.type = 0;
-			ip.mi.dy = 32768; // 0.5 * 65535 (scale factor) = 32768
-
-
-			INPUT key = {};  // press down key for reverse
-			key.type = INPUT_KEYBOARD;
-			key.ki.wVk = 0x28;
-
-			INPUT exitEnter = {}; // get out/in a vehicle
-			exitEnter.type = 0;
-			exitEnter.mi.dx = 0.8 * 65535; // location of bottom right button
-			exitEnter.mi.dy = 45000;
-
-
+			// Input Section (inputs set above)
 
 
 			if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall)" << endl;
-					ip.mi.dx = 0.8 * 65535; // turn right for more
-					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(600);
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
+					screenPress(ip, 0.6 * 65535, 32768, 600);
 				}
 				else {
 					cout << "Left (wall)" << endl;
-					ip.mi.dx = 0.4 * 65535; // turn left for more
-					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(600);
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
+					screenPress(ip, 0.4 * 65535, 32768, 600);
 				}
 			}
 			else if (datalineDistanceLanes[2] < 300) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
-				ip.mi.dx = 0.6 * 65535; // turn right
-				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistanceLanes[2]) * 0.5);
-				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				SendInput(1, &ip, sizeof(INPUT));
+				screenPress(ip, 0.6 * 65535, 32768, (300 - datalineDistanceLanes[2]) * 0.5);
 				cout << "Right" << endl;
 			}
 			else if (datalineDistanceLanes[0] < 300) {    // lanes on the left      // datalineDistanceLanes[0] < 300 && sin(4 * angle) > 0)
-				ip.mi.dx = 0.4 * 65535; // turn left
-				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-				SendInput(1, &ip, sizeof(INPUT));
-				Sleep((300 - datalineDistanceLanes[0]) * 0.5);
-				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				SendInput(1, &ip, sizeof(INPUT));
+				screenPress(ip, 0.4 * 65535, 32768, (300 - datalineDistanceLanes[0]) * 0.5);
 				cout << "Left" << endl;
 			}
 			else if (abs(sin(4 * angle)) > 0.9) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
-				ip.mi.dx = (0.5 - 0.2 * sin(4 * angle)) * 65535; // turn left/right
-				ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-				SendInput(1, &ip, sizeof(INPUT));
-				Sleep(150);
-				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				SendInput(1, &ip, sizeof(INPUT));
-				cout << "Right" << endl;
+				screenPress(ip, (0.5 - 0.2 * sin(4 * angle)) * 65535, 32768, 150);
+				cout << "Assist" << endl;
 			}
 			else {
 				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
@@ -446,10 +433,7 @@ int main() {
 
 			if (damaged) {
 				cout << "Smoking... ";
-				exitEnter.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-				SendInput(1, &exitEnter, sizeof(INPUT));
-				exitEnter.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				SendInput(1, &exitEnter, sizeof(INPUT));
+				screenPress(ip, 0.8 * 65535, 45000, 1);
 				smokeCounter = 1;
 			}
 
@@ -494,28 +478,15 @@ int main() {
 					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 					SendInput(1, &ip, sizeof(INPUT));
 					cout << "Continue!" << endl;
-					/*
-					cout << "Right (after reversing) - 1 s" << endl;
-					SendInput(1, &key, sizeof(key));   // added a round of reverse to cover "reversed" boolean switch inaccuracies
-					Sleep(1500);
-					key.ki.dwFlags = KEYEVENTF_KEYUP;
-					SendInput(1, &key, sizeof(key));
-					ip.mi.dx = 3456 / 2 * 20; // turn right for more
-					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(1000);
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
-					reversed = false;
-					cout << "Continue!" << endl;
-					*/
+
 				}
 			}
 
-
-
+			
 
 			cout << endl;
+
+
 
 
 
