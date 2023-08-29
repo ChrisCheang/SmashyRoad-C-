@@ -185,6 +185,17 @@ void screenPress(INPUT ip, int dx, int dy, int sleep) {
 	SendInput(1, &ip, sizeof(INPUT));
 }
 
+void printFPS() { // https://stackoverflow.com/a/61784821
+	static std::chrono::time_point<std::chrono::steady_clock> oldTime = std::chrono::high_resolution_clock::now();
+	static int fps; fps++;
+
+	if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - oldTime) >= std::chrono::seconds{ 1 }) {
+		oldTime = std::chrono::high_resolution_clock::now();
+		cout << " FPS: " << fps << endl;
+		fps = 0;
+	}
+}
+
 int main() {
 
 
@@ -277,6 +288,7 @@ int main() {
 		vector<Vec4i> lines;
 		HoughLinesP(edges, lines, 1, CV_PI / 180, 1, 0, 0);
 
+		/*
 		imshow("ha", imgBox);
 		moveWindow("ha", 1300, 200);
 
@@ -285,6 +297,7 @@ int main() {
 
 		imshow("Canny of small box", edges);
 		moveWindow("Canny of small box", 1300, 500);
+		*/
 
 		//
 
@@ -477,7 +490,7 @@ int main() {
 				}
 			}
 
-
+			printFPS();
 
 			cout << endl;
 
