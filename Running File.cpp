@@ -228,7 +228,7 @@ int main() {
 		if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
 			close = true;
 		}
-		if (GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
+		if (GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp//system_clock/now
 			screenPress(ip, 15000, 18000, 50);
 			Sleep(100);
 			screenPress(ip, 53000, 21000, 50);
@@ -425,10 +425,10 @@ int main() {
 				screenPress(ip, (0.5 - 0.2 * sin(4 * angle)) * 65535, 32768, 150);
 				cout << "Assist" << endl;
 			}
-			else {
-				ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				SendInput(1, &ip, sizeof(INPUT));
-			}
+			//else {
+				//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+				//SendInput(1, &ip, sizeof(INPUT));
+			//}
 
 
 			if (damaged) {
@@ -468,21 +468,16 @@ int main() {
 				}
 				else {
 					cout << "Right (after reversing) - 1 s" << endl;
-					ip.mi.dx = 0.6 * 65535; // turn right for more
-					ip.mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
-					SendInput(1, &ip, sizeof(INPUT));
-					Sleep(1000);
+					screenPress(ip, 0.6 * 65535, 32768, 1000);
 					if (reverseToken > 0) {
 						--reverseToken;
 					}
-					ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-					SendInput(1, &ip, sizeof(INPUT));
 					cout << "Continue!" << endl;
 
 				}
 			}
 
-			
+
 
 			cout << endl;
 
