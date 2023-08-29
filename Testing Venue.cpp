@@ -175,7 +175,16 @@ double pointDistanceToCentre(Point a) {
 	return sqrt(pow(a.x - screenSize.x / 2, 2) + pow(a.y - screenSize.y / 2, 2));
 }
 
+void printFPS() { // https://stackoverflow.com/a/61784821
+	static std::chrono::time_point<std::chrono::steady_clock> oldTime = std::chrono::high_resolution_clock::now();
+	static int fps; fps++;
 
+	if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - oldTime) >= std::chrono::seconds{ 1 }) {
+		oldTime = std::chrono::high_resolution_clock::now();
+		cout << " FPS: " << fps << endl;
+		fps = 0;
+	}
+}
 
 int main() {
 
@@ -272,6 +281,13 @@ int main() {
 		double minDistLanes, minDistEdges, angleDelta;
 		Point intersect, point1, point2;
 
+		Mat testing;
+		cvtColor(imgRaw, testing, cv::COLOR_BGR2HSV);
+		resize(testing, testing, Size(screenSize.x / 8, screenSize.y / 8), INTER_LINEAR);
+		inRange(testing, Scalar(80, 100, 100), Scalar(125, 255, 255), testing);
+		imshow("blue", testing);
+		resize(testing, testing, Size(screenSize.x / 3, screenSize.y / 3), INTER_LINEAR);
+		moveWindow("blue", 0, 400);
 
 
 		if (lines.size() == 0) {
@@ -387,6 +403,7 @@ int main() {
 
 			absdiff(imgRawNorm, imgRetakeNorm, dif);
 
+			printFPS();
 
 			cout << endl;
 
