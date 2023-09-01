@@ -239,7 +239,7 @@ int main() {
 		if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
 			close = true;
 		}
-		if (GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp//system_clock/now
+		if (GetAsyncKeyState(VK_SPACE) & 0x80000000) {//(GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp//system_clock/now
 			screenPress(ip, 15000, 18000, 50);
 			Sleep(100);
 			screenPress(ip, 53000, 21000, 50);
@@ -434,7 +434,7 @@ int main() {
 				screenPress(ip, 0.4 * 65535, 32768, (300 - datalineDistanceLanes[0]) * 0.5);
 				cout << "Left" << endl;
 			}
-			else if (abs(sin(4 * angle)) > 0.9) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
+			else if (abs(sin(4 * angle)) > 0.85) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
 				screenPress(ip, (0.5 - 0.2 * sin(4 * angle)) * 65535, 32768, 150);
 				cout << "Assist" << endl;
 			}
@@ -473,9 +473,10 @@ int main() {
 				if (reverseToken == 0) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
-					Sleep(2000);
+					Sleep(3000);
 					key.ki.dwFlags = KEYEVENTF_KEYUP;
 					SendInput(1, &key, sizeof(key));
+					screenPress(ip, 0.6 * 65535, 32768, 1000);
 					reverseToken = 1;
 					cout << "Finished reversing" << endl;
 				}
