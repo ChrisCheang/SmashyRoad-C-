@@ -281,12 +281,15 @@ int main() {
 		double minDistLanes, minDistEdges, angleDelta;
 		Point intersect, point1, point2;
 
-		Mat testing;
-		cvtColor(imgRaw, testing, cv::COLOR_BGR2HSV);
-		resize(testing, testing, Size(screenSize.x / 8, screenSize.y / 8), INTER_LINEAR);
-		inRange(testing, Scalar(80, 100, 100), Scalar(125, 255, 255), testing);
-		imshow("blue", testing);
-		resize(testing, testing, Size(screenSize.x / 3, screenSize.y / 3), INTER_LINEAR);
+		Mat imgMidSize, avoidSea;
+		imgMidSize = imgRaw(Range(screenSize.y / 2 - 300, screenSize.y / 2 + 300), Range(screenSize.x / 2 - 300, screenSize.x / 2 + 300));
+		cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
+		inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
+		resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
+
+		cout << avoidSea.at<uchar>(100, 100) << endl;
+
+		imshow("blue", avoidSea);
 		moveWindow("blue", 0, 400);
 
 
