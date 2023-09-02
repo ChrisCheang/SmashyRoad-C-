@@ -208,14 +208,11 @@ int main() {
 	bool driving = true; // boolean to identify driving or running states
 	bool damaged = false; // boolean to notify when to change vehicles
 	bool close = false; // boolean for easier program termination
+	bool evadeSea = false; // boolean to initiate centroid sea evasive action
 	int redCounter = 1, smokeCounter = 1, reverseToken = 0; // cumulative counters for damage, running and reverse states to notify the above
 
 	INPUT ip = {};   // mouse clicks
 	ip.type = 0;
-
-	INPUT key = {};  // press down key for reverse
-	key.type = INPUT_KEYBOARD;
-	key.ki.wVk = 0x28;
 
 
 	while (not close) {
@@ -247,6 +244,8 @@ int main() {
 			screenPress(ip, 40000, 35000, 150);
 			Sleep(2000);
 		}
+
+		evadeSea = false;
 
 		Mat imgBox = imgRaw(Range(ya, yb), Range(xa, xb));
 
@@ -341,6 +340,60 @@ int main() {
 			Point dirPoint = Point(dirPoint1.x + xa - boxCentre.x, -(dirPoint1.y + ya - boxCentre.y));
 			double angle = atan2(dirPoint.y, dirPoint.x);
 			// cout << "Angle = " << angle << " radians" << endl;
+			
+
+			// additional info loop using the "centroid" of the inRange result of the sea
+
+			Mat imgMidSize, avoidSea;
+			imgMidSize = imgRaw(Range(screenSize.y / 2 - 300, screenSize.y / 2 + 300), Range(screenSize.x / 2 - 300, screenSize.x / 2 + 300));
+			cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
+			inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
+			resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
+
+			Scalar pixelValue;
+			int seaValue, xAvg, yAvg, Num;
+			double angleDif;
+
+			if (countNonZero(avoidSea) > 5000) {
+				evadeSea = true;
+				Num = 0, xAvg = 0, yAvg = 0;
+				for (int i = 0; i < 20; i++) {
+					for (int j = 0; j < 20; j++) {
+						int x = 10 * j;
+						int y = 10 * i;
+						pixelValue = avoidSea.at<uchar>(y, x);
+						seaValue = pixelValue[0];
+						if (seaValue == 255) {
+							xAvg += x;
+							yAvg += y;
+							Num++;
+						}
+					}
+				}
+				xAvg = xAvg / (Num);    // calculate centroid 
+				yAvg = yAvg / (Num);
+				line(avoidSea, Point(100, 100), Point(xAvg, yAvg), Scalar(0, 0, 255), 2);
+
+				// Centroid technique processing
+
+				double centroidAngle = atan2(100 - yAvg, xAvg - 100);
+				angleDif = angle - centroidAngle;
+				if (angleDif < -CV_PI) {
+					angleDif += CV_2PI;// if centroidAngle is negative reflex, change to 2pi + centroidAngle 
+				}
+				if (angleDif < 0) {
+					cout << "sea! turn right!" << endl;
+				}
+				else {
+					cout << "sea! turn left!" << endl;
+				}
+				//cout << "centroidAngle = " << centroidAngle << ", angleDif = " << angleDif << endl;
+
+			}
+
+
+			//imshow("blue", avoidSea);
+			//moveWindow("blue", 0, 400);
 
 			// line detection of resized whole screen for lanes and boundaries
 
@@ -415,8 +468,17 @@ int main() {
 
 			// Input Section (inputs set above)
 
-
-			if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
+			if (evadeSea && angleDif < 0) {
+				cout << "sea! turn right!" << endl;
+				screenPress(ip, 0.6 * 65535, 32768, 400);
+				Sleep(500);
+			}
+			else if (evadeSea && angleDif > 0) {
+				cout << "sea! turn left!" << endl;
+				screenPress(ip, 0.4 * 65535, 32768, 400);
+				Sleep(500);
+			}
+			else if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall)" << endl;
 					screenPress(ip, 0.6 * 65535, 32768, 600);
@@ -467,6 +529,9 @@ int main() {
 			absdiff(imgRawNorm, imgRetakeNorm, dif);
 
 
+			INPUT key = {};  // press down key for reverse       key initiation placed back here to better reset the input 
+			key.type = INPUT_KEYBOARD;
+			key.ki.wVk = 0x28;
 
 
 			if (countNonZero(dif) < 5000 && driving) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
@@ -483,9 +548,7 @@ int main() {
 				else {
 					cout << "Right (after reversing) - 1 s" << endl;
 					screenPress(ip, 0.6 * 65535, 32768, 1000);
-					if (reverseToken > 0) {
-						--reverseToken;
-					}
+					reverseToken = 0; //if (reverseToken > 0) { --reverseToken; }
 					cout << "Continue!" << endl;
 
 				}
