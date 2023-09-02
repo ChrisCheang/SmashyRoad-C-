@@ -281,13 +281,39 @@ int main() {
 		double minDistLanes, minDistEdges, angleDelta;
 		Point intersect, point1, point2;
 
+		// additional info loop using the "centroid" of the inRange result of the sea
+		
 		Mat imgMidSize, avoidSea;
 		imgMidSize = imgRaw(Range(screenSize.y / 2 - 300, screenSize.y / 2 + 300), Range(screenSize.x / 2 - 300, screenSize.x / 2 + 300));
 		cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
 		inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
 		resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
 
-		cout << avoidSea.at<uchar>(100, 100) << endl;
+		Scalar pixelValue;
+		int seaValue, xAvg, yAvg, Num;
+		
+
+		if (countNonZero(avoidSea) > 5000) {
+			Num = 0, xAvg = 0, yAvg = 0;
+			for (int i = 0; i < 20; i++) {
+				for (int j = 0; j < 20; j++) {
+					int x = 10 * j;
+					int y = 10 * i;
+					pixelValue = avoidSea.at<uchar>(y, x);
+					seaValue = pixelValue[0];
+					if (seaValue == 255) {
+						xAvg += x;
+						yAvg += y;
+						Num++;
+					}
+				}
+			}
+			xAvg = xAvg / (Num);
+			yAvg = yAvg / (Num);
+			line(avoidSea, Point(100, 100), Point(xAvg, yAvg), Scalar(0, 0, 255), 2);
+			//circle(avoidSea, Point(xAvg, yAvg), 3, Scalar(255, 0, 0), FILLED, LINE_AA);
+			cout << endl << "Num = " << Num << ", " << xAvg << " " << yAvg << endl;
+		}
 
 		imshow("blue", avoidSea);
 		moveWindow("blue", 0, 400);
