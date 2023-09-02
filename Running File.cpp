@@ -478,7 +478,7 @@ int main() {
 				screenPress(ip, 0.4 * 65535, 32768, 400);
 				Sleep(500);
 			}
-			else if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
+			else if (datalineDistanceEdges[1] < 500) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall)" << endl;
 					screenPress(ip, 0.6 * 65535, 32768, 600);
