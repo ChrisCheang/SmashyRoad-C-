@@ -433,8 +433,8 @@ int main() {
 			}
 
 
-			//cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
-			//cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
+			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
 
 
 
