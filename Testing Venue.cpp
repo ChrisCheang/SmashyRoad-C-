@@ -281,43 +281,7 @@ int main() {
 		double minDistLanes, minDistEdges, angleDelta;
 		Point intersect, point1, point2;
 
-		// additional info loop using the "centroid" of the inRange result of the sea
 		
-		Mat imgMidSize, avoidSea;
-		imgMidSize = imgRaw(Range(screenSize.y / 2 - 300, screenSize.y / 2 + 300), Range(screenSize.x / 2 - 300, screenSize.x / 2 + 300));
-		cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
-		inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
-		resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
-
-		Scalar pixelValue;
-		int seaValue, xAvg, yAvg, Num;
-		
-
-		if (countNonZero(avoidSea) > 5000) {
-			Num = 0, xAvg = 0, yAvg = 0;
-			for (int i = 0; i < 20; i++) {
-				for (int j = 0; j < 20; j++) {
-					int x = 10 * j;
-					int y = 10 * i;
-					pixelValue = avoidSea.at<uchar>(y, x);
-					seaValue = pixelValue[0];
-					if (seaValue == 255) {
-						xAvg += x;
-						yAvg += y;
-						Num++;
-					}
-				}
-			}
-			xAvg = xAvg / (Num);
-			yAvg = yAvg / (Num);
-			line(avoidSea, Point(100, 100), Point(xAvg, yAvg), Scalar(0, 0, 255), 2);
-			//circle(avoidSea, Point(xAvg, yAvg), 3, Scalar(255, 0, 0), FILLED, LINE_AA);
-			cout << endl << "Num = " << Num << ", " << xAvg << " " << yAvg << endl;
-		}
-
-		imshow("blue", avoidSea);
-		moveWindow("blue", 0, 400);
-
 
 		if (lines.size() == 0) {
 			for (int i = 7; i > 0; i--) {
@@ -344,6 +308,59 @@ int main() {
 			Point dirPoint = Point(dirPoint1.x + xa - boxCentre.x, -(dirPoint1.y + ya - boxCentre.y));
 			double angle = atan2(dirPoint.y, dirPoint.x);
 			// cout << "Angle = " << angle << " radians" << endl;
+
+			// additional info loop using the "centroid" of the inRange result of the sea
+
+			Mat imgMidSize, avoidSea;
+			imgMidSize = imgRaw(Range(screenSize.y / 2 - 300, screenSize.y / 2 + 300), Range(screenSize.x / 2 - 300, screenSize.x / 2 + 300));
+			cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
+			inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
+			resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
+
+			Scalar pixelValue;
+			int seaValue, xAvg, yAvg, Num;
+
+
+			if (countNonZero(avoidSea) > 5000) {
+				Num = 0, xAvg = 0, yAvg = 0;
+				for (int i = 0; i < 20; i++) {
+					for (int j = 0; j < 20; j++) {
+						int x = 10 * j;
+						int y = 10 * i;
+						pixelValue = avoidSea.at<uchar>(y, x);
+						seaValue = pixelValue[0];
+						if (seaValue == 255) {
+							xAvg += x;
+							yAvg += y;
+							Num++;
+						}
+					}
+				}
+				xAvg = xAvg / (Num);
+				yAvg = yAvg / (Num);
+				line(avoidSea, Point(100, 100), Point(xAvg, yAvg), Scalar(0, 0, 255), 2);
+
+				// Centroid technique processing
+
+				double centroidAngle = atan2(100 - yAvg, xAvg - 100);
+				double angleDif;
+				angleDif = angle - centroidAngle;
+				if (angleDif < -CV_PI) {
+					angleDif += CV_2PI;// if centroidAngle is negative reflex, change to 2pi + centroidAngle 
+				}
+				if (angleDif < 0) {
+					cout << "sea! turn right!" << endl;
+				}
+				else {
+					cout << "sea! turn left!" << endl;
+				}
+				//cout << "centroidAngle = " << centroidAngle << ", angleDif = " << angleDif << endl;
+
+			}
+
+			imshow("blue", avoidSea);
+			moveWindow("blue", 0, 400);
+
 
 			// line detection of resized whole screen for lanes and boundaries
 
@@ -416,8 +433,8 @@ int main() {
 			}
 
 
-			cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
-			cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
+			//cout << "smokeCounter = " << smokeCounter << ", redCounter = " << redCounter;
+			//cout << ", reverseToken = " << reverseToken << " , sin4Angle = " << sin(4 * angle);
 
 
 
