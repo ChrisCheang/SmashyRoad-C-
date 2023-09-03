@@ -392,8 +392,8 @@ int main() {
 			}
 
 
-			//imshow("blue", avoidSea);
-			//moveWindow("blue", 0, 400);
+			imshow("blue", avoidSea);
+			moveWindow("blue", 0, 400);
 
 			// line detection of resized whole screen for lanes and boundaries
 
@@ -468,7 +468,8 @@ int main() {
 
 			// Input Section (inputs set above)
 
-			if (evadeSea && angleDif < 0) {
+			
+			if (evadeSea && angleDif < 0) {    // centorid sea avoidance
 				cout << "sea! turn right!" << endl;
 				screenPress(ip, 0.6 * 65535, 32768, 400);
 				Sleep(500);
@@ -478,7 +479,7 @@ int main() {
 				screenPress(ip, 0.4 * 65535, 32768, 400);
 				Sleep(500);
 			}
-			else if (datalineDistanceEdges[1] < 600) {    // turn left/right if an edge is in front
+			else if (datalineDistanceEdges[1] < 600 && driving) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
 					cout << "Right (wall)" << endl;
 					screenPress(ip, 0.6 * 65535, 32768, 600);
@@ -496,15 +497,15 @@ int main() {
 				screenPress(ip, 0.4 * 65535, 32768, (300 - datalineDistanceLanes[0]) * 0.5);
 				cout << "Left" << endl;
 			}
-			else if (abs(sin(4 * angle)) > 0.85) {     // lanes on the right    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
+			else if (abs(sin(4 * angle)) > 0.85 && driving) {     // assist    // datalineDistanceLanes[2] < 300 && sin(4 * angle) < 0)
 				screenPress(ip, (0.5 - 0.2 * sin(4 * angle)) * 65535, 32768, 150);
 				cout << "Assist" << endl;
 			}
-			//else {
-				//ip.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-				//SendInput(1, &ip, sizeof(INPUT));
-			//}
-
+			
+			if (not driving) {    
+				screenPress(ip, 0.8 * 65535, 45000, 1);     // just random screen presses for now; once ramp car / bus detection is set it it won't be random
+				Sleep(2000);
+			}
 
 			if (damaged) {
 				cout << "Smoking... ";
@@ -538,7 +539,7 @@ int main() {
 				if (reverseToken == 0) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
-					Sleep(3000);
+					Sleep(2000);
 					key.ki.dwFlags = KEYEVENTF_KEYUP;
 					SendInput(1, &key, sizeof(key));
 					screenPress(ip, 0.6 * 65535, 32768, 1000);
@@ -552,6 +553,9 @@ int main() {
 					cout << "Continue!" << endl;
 
 				}
+			}
+			else {
+				reverseToken = 0;
 			}
 
 			printFPS();
