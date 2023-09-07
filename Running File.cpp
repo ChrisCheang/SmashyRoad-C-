@@ -345,7 +345,7 @@ int main() {
 			// additional info loop using the "centroid" of the inRange result of the sea
 
 			Mat imgMidSize, avoidSea;
-			imgMidSize = imgRaw(Range(screenSize.y / 2 - 500, screenSize.y / 2 + 500), Range(screenSize.x / 2 - 500, screenSize.x / 2 + 500));
+			imgMidSize = imgRaw(Range(screenSize.y / 2 - 350, screenSize.y / 2 + 350), Range(screenSize.x / 2 - 350, screenSize.x / 2 + 350));
 			cvtColor(imgMidSize, avoidSea, cv::COLOR_BGR2HSV);
 			inRange(avoidSea, Scalar(80, 150, 150), Scalar(125, 255, 255), avoidSea);
 			resize(avoidSea, avoidSea, Size(200, 200), INTER_LINEAR);
@@ -354,7 +354,7 @@ int main() {
 			int seaValue, xAvg, yAvg, Num;
 			double angleDif;
 
-			if (countNonZero(avoidSea) > 5000) {
+			if (countNonZero(avoidSea) > 2500) {
 				evadeSea = true;
 				Num = 0, xAvg = 0, yAvg = 0;
 				for (int i = 0; i < 20; i++) {
@@ -471,13 +471,11 @@ int main() {
 			
 			if (evadeSea && angleDif < 0) {    // centorid sea avoidance
 				cout << "sea! turn right!" << endl;
-				screenPress(ip, 0.6 * 65535, 32768, 400);
-				Sleep(500);
+				screenPress(ip, 0.6 * 65535, 32768, countNonZero(avoidSea) / 10);
 			}
 			else if (evadeSea && angleDif > 0) {
 				cout << "sea! turn left!" << endl;
-				screenPress(ip, 0.4 * 65535, 32768, 400);
-				Sleep(500);
+				screenPress(ip, 0.4 * 65535, 32768, countNonZero(avoidSea) / 10);
 			}
 			else if (datalineDistanceEdges[1] < 600 && driving) {    // turn left/right if an edge is in front
 				if (datalineDistanceLanes[2] < datalineDistanceLanes[0]) {
@@ -535,7 +533,7 @@ int main() {
 			key.ki.wVk = 0x28;
 
 
-			if (countNonZero(dif) < 4000 && driving) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
+			if (countNonZero(dif) < 5000 && driving) {    // 5000 threshold is arbitrary; seems to work at least in the early stages
 				if (reverseToken == 0) {
 					cout << "Start reversing..." << endl;
 					SendInput(1, &key, sizeof(key));
