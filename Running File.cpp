@@ -236,7 +236,7 @@ int main() {
 		if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp/chrono/system_clock/now 
 			close = true;
 		}
-		if (GetAsyncKeyState(VK_SPACE) & 0x80000000) {//(GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp//system_clock/now
+		if (GetKeyState('R') & 0x8000/*Check if high-order bit is set (1 << 15)*/) {       // time from https://en.cppreference.com/w/cpp//system_clock/now
 			screenPress(ip, 15000, 18000, 50);
 			Sleep(100);
 			screenPress(ip, 53000, 21000, 50);
